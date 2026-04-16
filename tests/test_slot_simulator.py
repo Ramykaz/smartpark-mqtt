@@ -9,7 +9,7 @@ import threading
 import time
 import unittest
 from types import SimpleNamespace
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import paho.mqtt.client as mqtt
 
@@ -108,6 +108,31 @@ class TestSlotSimulatorCore(unittest.TestCase):
         self.assertEqual(parsed["slot_id"], "77")
         self.assertIn(parsed["state"], {"FREE", "OCCUPIED"})
         self.assertIsInstance(parsed["sent_ts"], (int, float))
+
+    def test_publish_logs_once_per_publish_when_logger_is_injected(self):
+        logger = MagicMock()
+        sim = SlotSimulator(slot_id="77", qos=1, logger=logger)
+        client = Mock()
+        client.publish.return_value = SimpleNamespace(mid=42)
+        sim._client = client
+
+        payload = {
+            "msg_id": "77-0001",
+            "slot_id": "77",
+            "state": "FREE",
+            "sent_ts": time.time(),
+        }
+        sim._publish(payload)
+
+        logger.log.assert_called_once()
+        event = logger.log.call_args.args[0]
+        self.assertEqual(event.msg_id, "77-0001")
+        self.assertEqual(event.slot_id, "77")
+        self.assertEqual(event.state, "FREE")
+        self.assertEqual(event.sent_ts, payload["sent_ts"])
+        self.assertEqual(event.recv_ts, 0)
+        self.assertEqual(event.qos, 1)
+        self.assertEqual(event.raw_topic, "parking/telemetry/77")
 
     def test_on_publish_logs_msg_id_and_clears_pending(self):
         sim = SlotSimulator(slot_id="slot_cb")

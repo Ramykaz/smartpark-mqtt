@@ -10,6 +10,9 @@ from typing import Any
 
 import paho.mqtt.client as mqtt
 
+from shared.protocol import Event
+from simulators.publisher_logger import PublisherLogger
+
 
 class SlotSimulator:
 	"""Publishes parking slot telemetry with a simple FREE/OCCUPIED FSM."""
@@ -23,6 +26,7 @@ class SlotSimulator:
 		min_hold_times: dict[str, int] = {"FREE": 5, "OCCUPIED": 10},
 		transition_interval: float = 1.0,
 		mode: str = "random",
+		logger: PublisherLogger | None = None,
 	) -> None:
 		self.slot_id = slot_id
 		self.broker_host = broker_host
@@ -31,6 +35,7 @@ class SlotSimulator:
 		self.min_hold_times = dict(min_hold_times)
 		self.transition_interval = transition_interval
 		self.mode = mode
+		self.logger = logger
 
 		self._state = "FREE"
 		self._state_entered_at = time.time()
@@ -77,6 +82,9 @@ class SlotSimulator:
 
 	def _run_loop(self) -> None:
 		while not self._stop_event.is_set():
+			# TODO: Add jitter to the per-slot transition interval and randomize which
+			# slots transition on a given cycle so large runs do not drift into an
+			# unrealistic lockstep publish/transition pattern.
 			if self._stop_event.wait(self.transition_interval):
 				break
 
@@ -117,8 +125,19 @@ class SlotSimulator:
 		}
 
 	def _publish(self, payload: dict[str, Any]) -> None:
+		event = Event(
+			slot_id=payload["slot_id"],
+			state=payload["state"],
+			msg_id=payload["msg_id"],
+			sent_ts=payload["sent_ts"],
+			recv_ts=0,
+			qos=self.qos,
+			raw_topic=self.topic,
+		)
 		result = self._client.publish(self.topic, json.dumps(payload), qos=self.qos)
 		self._pending_mid_to_msg_id[result.mid] = payload["msg_id"]
+		if self.logger is not None:
+			self.logger.log(event)
 
 
 if __name__ == "__main__":

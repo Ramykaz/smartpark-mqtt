@@ -13,3 +13,4 @@ data/figures/*.png
 
 # OS
 .DS_Store
+.codex

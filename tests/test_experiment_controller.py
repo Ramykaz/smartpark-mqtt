@@ -59,6 +59,9 @@ class TestExperimentController(unittest.TestCase):
             delay_ms=125,
             db_path="data/test.db",
             netem_interface="lo",
+            base_seed=None,
+            jitter_factor=0.2,
+            mode="random",
         )
 
         config = controller.build_config(args)
@@ -144,12 +147,12 @@ class TestExperimentController(unittest.TestCase):
             controller.DatabaseInit = FakeDatabase
             controller.apply_netem = lambda loss_pct, delay_ms, interface: call_order.append("apply_netem")
             controller.clear_netem = lambda interface: call_order.append("clear_netem")
-            controller.subscriber.start = lambda run_config: call_order.append("subscriber.start") or measurement_logger
+            controller.subscriber.start = lambda run_config, enable_logging=False: call_order.append("subscriber.start") or measurement_logger
             controller.subscriber.stop = lambda: call_order.append("subscriber.stop")
             controller.PublisherLogger = FakePublisherLogger
             controller.SlotSimulator = FakeSlotSimulator
 
-            controller.run_experiment(config, netem_interface="lo", stop_event=stop_event)
+            controller._run_experiment(config, netem_interface="lo", stop_event=stop_event)
         finally:
             controller.DatabaseInit = original_database_init
             controller.apply_netem = original_apply_netem

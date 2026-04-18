@@ -32,6 +32,21 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--delay", dest="delay_ms", type=int, default=0)
     parser.add_argument("--db-path", default="data/experiment.db")
     parser.add_argument("--netem-interface", default=DEFAULT_NETEM_INTERFACE)
+    # Integer seed for per-slot RNG. Slot i is seeded with base_seed + i,
+    # making state-transition sequences and phase offsets fully reproducible.
+    # Omit to run without seeding (legacy non-deterministic behaviour).
+    parser.add_argument("--base-seed", dest="base_seed", type=int, default=None)
+    # ±fraction of transition_interval added as per-tick jitter.
+    # 0.0 disables jitter; default 0.2 gives ±20 % spread.
+    parser.add_argument(
+        "--jitter-factor", dest="jitter_factor", type=float, default=0.2,
+        metavar="F",
+    )
+    # FSM transition mode applied to every slot.
+    # "random" is realistic; "forced" maximises publish rate for load tests.
+    parser.add_argument(
+        "--mode", choices=("random", "forced"), default="random",
+    )
     return parser
 
 
@@ -50,6 +65,9 @@ def build_config(args: argparse.Namespace) -> ExperimentConfig:
         delay_ms=args.delay_ms,
         started_at=started_at,
         db_path=args.db_path,
+        base_seed=args.base_seed,
+        jitter_factor=args.jitter_factor,
+        mode=args.mode,
     )
 
 
@@ -137,16 +155,22 @@ def _run_experiment(
         database.initialize()
         database.insert_run(config)
         apply_netem(config.loss_pct, config.delay_ms, netem_interface)
-        measurement_logger = subscriber.start(config)
+        measurement_logger = subscriber.start(config, enable_logging=True)
 
         transition_interval = transition_interval_from_rate(config.transition_rate)
-        for slot_id in slot_ids_for_run(config):
+        for i, slot_id in enumerate(slot_ids_for_run(config)):
             logger = PublisherLogger(config.db_path, config.run_id)
+            # Derive a unique seed per slot so slots are desynchronised but
+            # the whole run is still reproducible from base_seed alone.
+            slot_seed = config.base_seed + i if config.base_seed is not None else None
             simulator = SlotSimulator(
                 slot_id=slot_id,
                 qos=config.qos,
                 transition_interval=transition_interval,
                 logger=logger,
+                seed=slot_seed,
+                jitter_factor=config.jitter_factor,
+                mode=config.mode,
             )
             publisher_loggers.append(logger)
             simulators.append(simulator)

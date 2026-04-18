@@ -1,4 +1,4 @@
-## Randomization
+## [x] Randomization
 The current simulator can drift into a lockstep pattern because all slots
 in a run are started from the controller with the same transition interval, the
 same initial state, and nearly the same start time. That means many slots can

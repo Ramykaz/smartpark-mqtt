@@ -16,16 +16,19 @@ _state: ParkingLotState | None = None
 _alerts: AlertService | None = None
 
 
-def start(config: ExperimentConfig) -> MeasurementLogger:
+def start(config: ExperimentConfig, enable_logging: bool = False) -> MeasurementLogger | None:
     global _bus, _consumer, _measurement, _state, _alerts
 
     stop()
 
     _state = ParkingLotState(slot_ids_for_run(config))
-    _measurement = MeasurementLogger(config.db_path, config.run_id)
     _alerts = AlertService(_state)
     _bus = EventBus()
-    _bus.subscribe(_measurement.record)
+
+    if enable_logging:
+        _measurement = MeasurementLogger(config.db_path, config.run_id)
+        _bus.subscribe(_measurement.record)
+
     _bus.subscribe(_state.update)
     _bus.subscribe(_alerts.check)
 

@@ -1,4 +1,4 @@
-## [x] Randomization
+## [x 18-04-2026] Randomization
 The current simulator can drift into a lockstep pattern because all slots
 in a run are started from the controller with the same transition interval, the
 same initial state, and nearly the same start time. That means many slots can
@@ -50,5 +50,5 @@ Components that likely need refactoring:
   They would need to validate jitter bounds, scheduling rules, and non-lockstep
   startup behavior instead.
 
-## Adding shared protocol to slot_simulator
-## Debug output of experiments individually before running full matrix 
+## [x 18-04-2026] Adding shared protocol to slot_simulator
+## Integration tests

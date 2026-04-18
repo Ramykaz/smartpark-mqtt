@@ -1,5 +1,10 @@
 # Progress
 
+## v0.5 - 2026-04-18
+
+- Added `tests/test_integration_basic.py`, a standalone end-to-end check that runs the real subscriber with SQLite logging enabled and 3 real slot simulators against the (run this on your host before running the test) Mosquitto broker on `localhost:1883`.
+- The script lets the system run briefly, then verifies the `received` table contains rows for all 3 slots with valid `msg_id` format, non-duplicate deliveries, and `recv_ts >= sent_ts`.
+
 ## v0.4 - 2026-04-18
 
 - Made `MeasurementLogger` opt-in in the subscriber: `subscriber.start()` now accepts `enable_logging=False` (default) and only creates the logger, opens a SQLite connection, and registers the `record` handler when explicitly enabled.

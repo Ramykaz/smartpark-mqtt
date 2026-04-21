@@ -2,6 +2,7 @@
 
 import json
 import os
+import random
 import re
 import socket
 import sys
@@ -9,36 +10,35 @@ import threading
 import time
 import unittest
 from types import SimpleNamespace
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import paho.mqtt.client as mqtt
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+from shared.protocol import BROKER_HOST, BROKER_PORT, MIN_HOLD_TIMES
 from simulators.slot_simulator import SlotSimulator
 
 
 class TestSlotSimulatorCore(unittest.TestCase):
+    # A1
     def test_constructor_parameters_and_defaults(self):
         sim = SlotSimulator(slot_id="slot_01")
 
         self.assertEqual(sim.slot_id, "slot_01")
-        self.assertEqual(sim.broker_host, "localhost")
-        self.assertEqual(sim.broker_port, 1883)
+        self.assertEqual(sim.broker_host, BROKER_HOST)
+        self.assertEqual(sim.broker_port, BROKER_PORT)
         self.assertEqual(sim.qos, 0)
-        self.assertEqual(sim.min_hold_times, {"FREE": 5, "OCCUPIED": 10})
+        self.assertEqual(sim.min_hold_times, dict(MIN_HOLD_TIMES))
         self.assertEqual(sim.transition_interval, 1.0)
         self.assertEqual(sim.mode, "random")
         self.assertEqual(sim._state, "FREE")
+        self.assertEqual(sim.jitter_factor, 0.2)
+        self.assertIsInstance(sim._rng, random.Random)
 
-    def test_msg_id_format_and_increment(self):
-        sim = SlotSimulator(slot_id="A1")
-        self.assertEqual(sim._next_msg_id(), "A1-0001")
-        self.assertEqual(sim._next_msg_id(), "A1-0002")
-        self.assertEqual(sim._next_msg_id(), "A1-0003")
-
+    # A2
     def test_fsm_min_hold_times_in_alternate_mode(self):
-        sim = SlotSimulator(slot_id="slot_fsm", mode="alternate")
+        sim = SlotSimulator(slot_id="slot_fsm", mode="alternate", seed=42)
 
         sim._state = "FREE"
         sim._state_entered_at = time.time() - 4.9
@@ -57,45 +57,51 @@ class TestSlotSimulatorCore(unittest.TestCase):
         sim._maybe_transition_state()
         self.assertEqual(sim._state, "FREE")
 
+    # A6
     def test_publish_loop_order_wait_then_transition_build_publish(self):
-        sim = SlotSimulator(slot_id="slot_loop", mode="alternate")
+        sim = SlotSimulator(slot_id="slot_loop", mode="alternate", seed=42)
         events: list[str] = []
+        wait_calls = [0]
 
-        class ControlledEvent:
-            def __init__(self) -> None:
-                self.wait_count = 0
-
-            def is_set(self) -> bool:
+        class RecordingEvent:
+            def is_set(self_inner) -> bool:
                 return False
 
-            def wait(self, timeout: float) -> bool:
-                _ = timeout
-                events.append("wait")
-                self.wait_count += 1
-                return self.wait_count >= 2
+            def wait(self_inner, timeout: float) -> bool:
+                wait_calls[0] += 1
+                if wait_calls[0] == 1:
+                    events.append("phase_offset")
+                    return False
+                else:
+                    events.append("wait")
+                    return wait_calls[0] >= 3
 
-        sim._stop_event = ControlledEvent()  # type: ignore[assignment]
-        sim._maybe_transition_state = lambda: events.append("transition")  # type: ignore[assignment]
-        sim._build_payload = lambda: events.append("build") or {"msg_id": "slot_loop-0001"}  # type: ignore[assignment]
-        sim._publish = lambda payload: events.append("publish")  # type: ignore[assignment]
+        sim._stop_event = RecordingEvent()  # type: ignore[assignment]
+
+        def fake_transition() -> bool:
+            events.append("transition")
+            return True
+
+        def fake_publish() -> None:
+            events.append("publish")
+
+        sim._maybe_transition_state = fake_transition  # type: ignore[assignment]
+        sim._publish_current_state = fake_publish  # type: ignore[assignment]
 
         sim._run_loop()
 
-        self.assertEqual(events, ["wait", "transition", "build", "publish", "wait"])
+        self.assertEqual(events, ["phase_offset", "wait", "transition", "publish", "wait"])
 
+    # A4
     def test_publish_uses_topic_json_and_qos(self):
-        sim = SlotSimulator(slot_id="77", qos=1)
+        sim = SlotSimulator(slot_id="77", qos=1, seed=0)
         client = Mock()
         client.publish.return_value = SimpleNamespace(mid=42)
         sim._client = client
 
-        payload = {
-            "msg_id": "77-0001",
-            "slot_id": "77",
-            "state": "FREE",
-            "sent_ts": time.time(),
-        }
-        sim._publish(payload)
+        sim._state = "OCCUPIED"
+        sim._message_counter = 0
+        sim._publish_current_state()
 
         client.publish.assert_called_once()
         topic, json_payload = client.publish.call_args.args[:2]
@@ -104,17 +110,42 @@ class TestSlotSimulatorCore(unittest.TestCase):
         self.assertEqual(topic, "parking/telemetry/77")
         self.assertEqual(qos_value, 1)
         parsed = json.loads(json_payload)
+        self.assertSetEqual(set(parsed.keys()), {"msg_id", "slot_id", "state", "sent_ts", "qos"})
         self.assertEqual(parsed["msg_id"], "77-0001")
         self.assertEqual(parsed["slot_id"], "77")
         self.assertIn(parsed["state"], {"FREE", "OCCUPIED"})
-        self.assertIsInstance(parsed["sent_ts"], (int, float))
+        self.assertIsInstance(parsed["sent_ts"], int)
+        self.assertEqual(parsed["qos"], 1)
 
+    # A5
+    def test_publish_logs_once_per_publish_when_logger_is_injected(self):
+        logger = MagicMock()
+        sim = SlotSimulator(slot_id="77", qos=1, logger=logger, seed=0)
+        client = Mock()
+        client.publish.return_value = SimpleNamespace(mid=42)
+        sim._client = client
+
+        sim._state = "FREE"
+        sim._message_counter = 0
+        sim._publish_current_state()
+
+        logger.log.assert_called_once()
+        event = logger.log.call_args.args[0]
+        self.assertEqual(event.msg_id, "77-0001")
+        self.assertEqual(event.slot_id, "77")
+        self.assertEqual(event.state, "FREE")
+        self.assertIsInstance(event.sent_ts, int)
+        self.assertEqual(event.recv_ts, 0)
+        self.assertEqual(event.qos, 1)
+        self.assertEqual(event.raw_topic, "parking/telemetry/77")
+
+    # A3
     def test_on_publish_logs_msg_id_and_clears_pending(self):
         sim = SlotSimulator(slot_id="slot_cb")
         sim._pending_mid_to_msg_id[7] = "slot_cb-0001"
 
         with patch("builtins.print") as mock_print:
-            sim.on_publish(client=Mock(), userdata=None, mid=7)
+            sim._on_publish(client=Mock(), userdata=None, mid=7)
 
         self.assertNotIn(7, sim._pending_mid_to_msg_id)
         mock_print.assert_called_once_with("[slot slot_cb] published slot_cb-0001")
@@ -140,6 +171,149 @@ class TestSlotSimulatorCore(unittest.TestCase):
         sim._client.loop_stop.assert_called_once()
         sim._client.disconnect.assert_called_once()
 
+    # C1
+    def test_seeded_reproducibility(self):
+        kwargs = dict(
+            slot_id="slot_repro",
+            seed=123,
+            transition_interval=0.1,
+            jitter_factor=0.0,
+            mode="random",
+            min_hold_times={"FREE": 0, "OCCUPIED": 0, "RESERVED": 300},
+        )
+        sim1 = SlotSimulator(**kwargs)
+        sim2 = SlotSimulator(**kwargs)
+        sim1._client = Mock()
+        sim2._client = Mock()
+
+        states1: list[str] = []
+        states2: list[str] = []
+        for _ in range(20):
+            sim1._state_entered_at = time.time() - 1000
+            sim2._state_entered_at = time.time() - 1000
+            sim1._maybe_transition_state()
+            sim2._maybe_transition_state()
+            states1.append(sim1._state)
+            states2.append(sim2._state)
+
+        self.assertEqual(states1, states2)
+
+    # C2
+    def test_different_seeds_diverge(self):
+        common_kwargs = dict(
+            slot_id="slot_div",
+            transition_interval=0.1,
+            jitter_factor=0.0,
+            mode="random",
+            min_hold_times={"FREE": 0, "OCCUPIED": 0, "RESERVED": 300},
+        )
+        sim1 = SlotSimulator(**common_kwargs, seed=100)
+        sim2 = SlotSimulator(**common_kwargs, seed=200)
+
+        states1: list[str] = []
+        states2: list[str] = []
+        for _ in range(20):
+            sim1._state_entered_at = time.time() - 1000
+            sim2._state_entered_at = time.time() - 1000
+            sim1._maybe_transition_state()
+            sim2._maybe_transition_state()
+            states1.append(sim1._state)
+            states2.append(sim2._state)
+
+        self.assertNotEqual(states1, states2)
+
+    # C3
+    def test_phase_offset_occurs_before_loop(self):
+        sim = SlotSimulator(slot_id="slot_phase", seed=42, transition_interval=1.0, jitter_factor=0.0)
+        wait_timeouts: list[float] = []
+        call_count = [0]
+
+        class RecordingEvent:
+            def is_set(self_inner) -> bool:
+                return False
+
+            def wait(self_inner, timeout: float) -> bool:
+                call_count[0] += 1
+                wait_timeouts.append(timeout)
+                return call_count[0] >= 2
+
+        sim._stop_event = RecordingEvent()  # type: ignore[assignment]
+        sim._maybe_transition_state = lambda: False  # type: ignore[assignment]
+
+        sim._run_loop()
+
+        self.assertEqual(len(wait_timeouts), 2)
+        # First wait is the phase offset: in [0, transition_interval)
+        self.assertGreaterEqual(wait_timeouts[0], 0.0)
+        self.assertLess(wait_timeouts[0], 1.0)
+        # Second wait is the first tick; jitter_factor=0 → exactly transition_interval
+        self.assertAlmostEqual(wait_timeouts[1], 1.0, places=9)
+
+    # C4
+    def test_jitter_varies_sleep_duration(self):
+        sim = SlotSimulator(slot_id="slot_jitter", seed=7, transition_interval=1.0, jitter_factor=0.2)
+        wait_timeouts: list[float] = []
+        call_count = [0]
+
+        class RecordingEvent:
+            def is_set(self_inner) -> bool:
+                return False
+
+            def wait(self_inner, timeout: float) -> bool:
+                call_count[0] += 1
+                wait_timeouts.append(timeout)
+                return call_count[0] >= 10  # 1 phase offset + 9 ticks
+
+        sim._stop_event = RecordingEvent()  # type: ignore[assignment]
+        sim._maybe_transition_state = lambda: False  # type: ignore[assignment]
+
+        sim._run_loop()
+
+        tick_sleeps = wait_timeouts[1:]  # skip phase offset
+        self.assertEqual(len(tick_sleeps), 9)
+        for t in tick_sleeps:
+            self.assertGreaterEqual(t, 0.8)
+            self.assertLessEqual(t, 1.2)
+        self.assertFalse(all(t == tick_sleeps[0] for t in tick_sleeps))
+
+    # C5
+    def test_no_publish_without_transition(self):
+        sim = SlotSimulator(
+            slot_id="slot_nopub",
+            mode="random",
+            seed=0,
+            min_hold_times={"FREE": 999, "OCCUPIED": 999, "RESERVED": 300},
+        )
+        client = Mock()
+        sim._client = client
+
+        results = [sim._maybe_transition_state() for _ in range(10)]
+
+        self.assertTrue(all(r is False for r in results))
+        client.publish.assert_not_called()
+
+    # C6
+    def test_payload_schema_matches_protocol(self):
+        sim = SlotSimulator(slot_id="slot_schema", qos=2, seed=1)
+        sim._state = "FREE"
+        sim._message_counter = 0
+        client = Mock()
+        client.publish.return_value = SimpleNamespace(mid=1)
+        sim._client = client
+
+        sim._publish_current_state()
+
+        client.publish.assert_called_once()
+        json_str = client.publish.call_args.args[1]
+        payload = json.loads(json_str)
+
+        self.assertSetEqual(set(payload.keys()), {"slot_id", "state", "msg_id", "sent_ts", "qos"})
+        self.assertRegex(payload["msg_id"], r"^.+-\d{4}$")
+        self.assertIsInstance(payload["sent_ts"], int)
+        now_ms = time.time_ns() // 1_000_000
+        self.assertLessEqual(abs(payload["sent_ts"] - now_ms), 2000)
+        self.assertEqual(payload["qos"], 2)
+
 
 class TestSlotSimulatorIntegration(unittest.TestCase):
     def _broker_available(self, host: str = "localhost", port: int = 1883) -> bool:
@@ -149,6 +323,7 @@ class TestSlotSimulatorIntegration(unittest.TestCase):
         except OSError:
             return False
 
+    # A7
     def test_one_simulator_10s_json_arrives_at_broker(self):
         if not self._broker_available():
             self.skipTest("MQTT broker not available on localhost:1883")
@@ -171,7 +346,14 @@ class TestSlotSimulatorIntegration(unittest.TestCase):
         subscriber.subscribe(topic, qos=1)
         subscriber.loop_start()
 
-        simulator = SlotSimulator(slot_id=slot_id, qos=1, transition_interval=1.0, mode="alternate")
+        simulator = SlotSimulator(
+            slot_id=slot_id,
+            qos=1,
+            transition_interval=1.0,
+            mode="alternate",
+            seed=99,
+            min_hold_times={"FREE": 1, "OCCUPIED": 1, "RESERVED": 300},
+        )
 
         try:
             simulator.start()
@@ -182,7 +364,7 @@ class TestSlotSimulatorIntegration(unittest.TestCase):
             subscriber.loop_stop()
             subscriber.disconnect()
 
-        self.assertGreaterEqual(len(received), 8)
+        self.assertGreaterEqual(len(received), 3)
 
         counters: list[int] = []
         seen_states: set[str] = set()
@@ -191,10 +373,10 @@ class TestSlotSimulatorIntegration(unittest.TestCase):
         for item in received:
             msg = item["payload"]
             self.assertEqual(item["topic"], topic)
-            self.assertSetEqual(set(msg.keys()), {"msg_id", "slot_id", "state", "sent_ts"})
+            self.assertSetEqual(set(msg.keys()), {"msg_id", "slot_id", "state", "sent_ts", "qos"})
             self.assertEqual(msg["slot_id"], slot_id)
             self.assertIn(msg["state"], {"FREE", "OCCUPIED"})
-            self.assertIsInstance(msg["sent_ts"], (int, float))
+            self.assertIsInstance(msg["sent_ts"], int)
 
             match = pattern.match(msg["msg_id"])
             self.assertIsNotNone(match)

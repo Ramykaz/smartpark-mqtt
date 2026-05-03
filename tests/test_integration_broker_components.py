@@ -75,7 +75,7 @@ class TestPublisherSubscriberBrokerIntegration(unittest.TestCase):
                     slot_id=slot_id,
                     qos=1,
                     transition_interval=0.35,
-                    mode="forced",
+                    mode="random",
                     seed=index,
                     jitter_factor=0.0,
                     min_hold_times={"FREE": 0, "OCCUPIED": 0, "RESERVED": 300},

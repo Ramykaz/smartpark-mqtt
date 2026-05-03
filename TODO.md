@@ -51,4 +51,27 @@ Components that likely need refactoring:
   startup behavior instead.
 
 ## [x 18-04-2026] Adding shared protocol to slot_simulator
-## Integration tests
+## [x] Integration tests
+
+## [] Rename slotsimulator and subscriber
+
+## [] MQTT topic coverage gaps
+
+Three protocol topics are defined in `shared/protocol.py` but not fully handled end-to-end:
+
+### [] `parking/commands/{slot_id}`
+- The UI publishes a RESERVE command to this topic when a FREE slot is clicked.
+- Nothing subscribes to it. A command handler is needed that:
+  - Subscribes to `parking/commands/#`
+  - On `{"command": "RESERVE", "slot_id": ...}`, transitions that slot to RESERVED and publishes a telemetry update so the UI reflects the change
+- Without this, clicking a slot leaves it stuck in REQUESTING until the simulator overwrites it.
+
+### [] `parking/system/summary`
+- The UI subscribes to this topic and uses it to update the summary panel (FREE / OCCUPIED / RESERVED counts) and trigger the 90% alert banner.
+- Nothing publishes it. The subscriber backend (`subscriber/parking_state.py`, `subscriber/alerts.py`) tracks counts internally but never emits a summary message.
+- A summary publisher is needed — either inside the subscriber or as a separate aggregator — that emits to this topic whenever slot counts change.
+
+### [] `parking/system/alert`
+- Defined in the protocol but not subscribed to or published anywhere in the current codebase.
+- The UI uses `signals.alert_triggered` driven by the summary ratio, so the alert banner works without this topic — but a dedicated alert topic would allow external systems to react to lot-full conditions.
+- Decide: publish here from the subscriber's `AlertService`, or remove the constant if it will stay unused.

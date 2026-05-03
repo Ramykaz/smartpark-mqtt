@@ -1,5 +1,17 @@
 # Progress
 
+## v0.6 - 2026-05-03
+
+- Built a complete PyQt5 desktop dashboard (`ui/`) for real-time parking lot visualisation.
+- Added `ui/signals.py`: central `ParkingSignals(QObject)` with four typed signals (`slot_updated`, `summary_updated`, `alert_triggered`, `connected`) used for thread-safe communication between the Paho MQTT thread and the Qt main thread.
+- Added `ui/widgets/slot_cell.py`: `SlotCell(QFrame)` widget — 90×70 px cell displaying slot ID and state, color-coded by state (FREE/OCCUPIED/RESERVED/REQUESTING), emits `reserve_requested` signal on left-click when FREE.
+- Added `ui/widgets/slot_grid.py`: `SlotGrid(QWidget)` that lays out N SlotCells in a `ceil(sqrt(N))`-column grid, exposes `update_slot()` and forwards `reserve_requested` upward.
+- Added `ui/widgets/summary_panel.py`: `SummaryPanel(QFrame)` showing live FREE / OCCUPIED / RESERVED counts in a horizontal bar.
+- Added `ui/widgets/alert_banner.py`: `AlertBanner(QLabel)` red banner shown when occupancy exceeds 90%, hidden by default.
+- Added `ui/dashboard.py`: `ParkingDashboard(QMainWindow)` wiring all widgets together, managing its own Paho MQTT client (subscribes to `parking/telemetry/+` and `parking/system/#`), and publishing RESERVE commands on slot click.
+- Added `ui/main.py`: CLI entry point with `--slots`, `--broker`, `--port` arguments; generates zero-padded slot IDs matching the simulator's naming convention.
+- Fixed platform plugin resolution: set `QT_QPA_PLATFORM_PLUGIN_PATH` before `QApplication` loads to point at the bundled PyQt5 cocoa plugin.
+
 ## v0.5 - 2026-04-18
 
 - Added `tests/test_integration_basic.py`, a standalone end-to-end check that runs the real subscriber with SQLite logging enabled and 3 real slot simulators against the (run this on your host before running the test) Mosquitto broker on `localhost:1883`.

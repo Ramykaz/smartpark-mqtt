@@ -12,10 +12,10 @@ from typing import Sequence
 
 from shared import DatabaseInit, ExperimentConfig
 from shared.protocol import slot_ids_for_run
-from simulators.publisher_logger import PublisherLogger
-from simulators.slot_simulator import SlotSimulator
-from subscriber.measurement import MeasurementLogger
-from subscriber import subscriber
+from sensors.publisher_logger import PublisherLogger
+from sensors.sensor_node import SensorNode
+from parking_controller.measurement import MeasurementLogger
+from parking_controller import parking_controller
 
 DEFAULT_NETEM_INTERFACE = "lo"
 
@@ -146,7 +146,7 @@ def _run_experiment(
     database = DatabaseInit(config.db_path)
     measurement_logger: MeasurementLogger | None = None
     publisher_loggers: list[PublisherLogger] = []
-    simulators: list[SlotSimulator] = []
+    simulators: list[SensorNode] = []
     local_stop_event = stop_event or threading.Event()
     installed_handlers = None if stop_event is not None else install_signal_handlers(local_stop_event)
     run_error: Exception | None = None
@@ -155,7 +155,7 @@ def _run_experiment(
         database.initialize()
         database.insert_run(config)
         apply_netem(config.loss_pct, config.delay_ms, netem_interface)
-        measurement_logger = subscriber.start(config, enable_logging=True)
+        measurement_logger = parking_controller.start(config, enable_logging=True)
 
         transition_interval = transition_interval_from_rate(config.transition_rate)
         for i, slot_id in enumerate(slot_ids_for_run(config)):
@@ -163,7 +163,7 @@ def _run_experiment(
             # Derive a unique seed per slot so slots are desynchronised but
             # the whole run is still reproducible from base_seed alone.
             slot_seed = config.base_seed + i if config.base_seed is not None else None
-            simulator = SlotSimulator(
+            simulator = SensorNode(
                 slot_id=slot_id,
                 qos=config.qos,
                 transition_interval=transition_interval,
@@ -198,7 +198,7 @@ def _run_experiment(
 
 def shutdown_experiment(
     *,
-    simulators: Sequence[SlotSimulator],
+    simulators: Sequence[SensorNode],
     measurement_logger: MeasurementLogger | None,
     publisher_loggers: Sequence[PublisherLogger],
     database: DatabaseInit,
@@ -213,7 +213,7 @@ def shutdown_experiment(
             errors.append(exc)
 
     try:
-        subscriber.stop()
+        parking_controller.stop()
     except Exception as exc:
         errors.append(exc)
 

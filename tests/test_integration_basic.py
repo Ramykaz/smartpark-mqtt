@@ -10,8 +10,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from shared.db import DatabaseInit
 from shared.protocol import BROKER_HOST, BROKER_PORT, ExperimentConfig
-from simulators.slot_simulator import SlotSimulator
-from subscriber import subscriber
+from sensors.sensor_node import SensorNode
+from parking_controller import parking_controller
 
 
 def broker_available(host: str = BROKER_HOST, port: int = BROKER_PORT) -> bool:
@@ -48,7 +48,7 @@ def main() -> int:
         )
         measurement = None
         simulators = [
-            SlotSimulator(
+            SensorNode(
                 slot_id=slot_id,
                 qos=1,
                 transition_interval=2.0,
@@ -59,14 +59,14 @@ def main() -> int:
         ]
 
         try:
-            measurement = subscriber.start(config, enable_logging=True)
+            measurement = parking_controller.start(config, enable_logging=True)
             for sim in simulators:
                 sim.start()
             time.sleep(15)
             for sim in simulators:
                 sim.stop()
             time.sleep(2.5)
-            subscriber.stop()
+            parking_controller.stop()
             if measurement is not None:
                 measurement.flush()
                 measurement.close()
@@ -92,7 +92,7 @@ def main() -> int:
                 assert recv_ts >= sent_ts, f"recv_ts < sent_ts for {msg_id}"
                 assert is_duplicate == 0, f"duplicate flag set for {msg_id}"
 
-            print("PASS: subscriber and 3 slot simulators exchanged telemetry through Mosquitto.")
+            print("PASS: parking controller and 3 sensor nodes exchanged telemetry through Mosquitto.")
             print("PASS: SQLite rows cover all slots, timestamps are ordered, and duplicates stayed at 0.")
             return 0
         except Exception as exc:
@@ -105,7 +105,7 @@ def main() -> int:
                 except Exception:
                     pass
             try:
-                subscriber.stop()
+                parking_controller.stop()
             except Exception:
                 pass
             if measurement is not None:

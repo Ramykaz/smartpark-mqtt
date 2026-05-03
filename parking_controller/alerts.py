@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from shared.protocol import ALERT_THRESHOLD, Event
-from subscriber.parking_state import ParkingLotState
+from parking_controller.parking_state import ParkingLotState
 
 
 class AlertService:

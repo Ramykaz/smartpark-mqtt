@@ -1,4 +1,4 @@
-"""Unit and integration tests for simulators.slot_simulator."""
+"""Unit and integration tests for sensors.sensor_node."""
 
 import json
 import os
@@ -17,13 +17,13 @@ import paho.mqtt.client as mqtt
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from shared.protocol import BROKER_HOST, BROKER_PORT, MIN_HOLD_TIMES
-from simulators.slot_simulator import SlotSimulator
+from sensors.sensor_node import SensorNode
 
 
-class TestSlotSimulatorCore(unittest.TestCase):
+class TestSensorNodeCore(unittest.TestCase):
     # A1
     def test_constructor_parameters_and_defaults(self):
-        sim = SlotSimulator(slot_id="slot_01")
+        sim = SensorNode(slot_id="slot_01")
 
         self.assertEqual(sim.slot_id, "slot_01")
         self.assertEqual(sim.broker_host, BROKER_HOST)
@@ -38,7 +38,7 @@ class TestSlotSimulatorCore(unittest.TestCase):
 
     # A2
     def test_fsm_min_hold_times_in_alternate_mode(self):
-        sim = SlotSimulator(slot_id="slot_fsm", mode="alternate", seed=42)
+        sim = SensorNode(slot_id="slot_fsm", mode="alternate", seed=42)
 
         sim._state = "FREE"
         sim._state_entered_at = time.time() - 4.9
@@ -59,7 +59,7 @@ class TestSlotSimulatorCore(unittest.TestCase):
 
     # A6
     def test_publish_loop_order_wait_then_transition_build_publish(self):
-        sim = SlotSimulator(slot_id="slot_loop", mode="alternate", seed=42)
+        sim = SensorNode(slot_id="slot_loop", mode="alternate", seed=42)
         events: list[str] = []
         wait_calls = [0]
 
@@ -94,7 +94,7 @@ class TestSlotSimulatorCore(unittest.TestCase):
 
     # A4
     def test_publish_uses_topic_json_and_qos(self):
-        sim = SlotSimulator(slot_id="77", qos=1, seed=0)
+        sim = SensorNode(slot_id="77", qos=1, seed=0)
         client = Mock()
         client.publish.return_value = SimpleNamespace(mid=42)
         sim._client = client
@@ -120,7 +120,7 @@ class TestSlotSimulatorCore(unittest.TestCase):
     # A5
     def test_publish_logs_once_per_publish_when_logger_is_injected(self):
         logger = MagicMock()
-        sim = SlotSimulator(slot_id="77", qos=1, logger=logger, seed=0)
+        sim = SensorNode(slot_id="77", qos=1, logger=logger, seed=0)
         client = Mock()
         client.publish.return_value = SimpleNamespace(mid=42)
         sim._client = client
@@ -141,7 +141,7 @@ class TestSlotSimulatorCore(unittest.TestCase):
 
     # A3
     def test_on_publish_logs_msg_id_and_clears_pending(self):
-        sim = SlotSimulator(slot_id="slot_cb")
+        sim = SensorNode(slot_id="slot_cb")
         sim._pending_mid_to_msg_id[7] = "slot_cb-0001"
 
         with patch("builtins.print") as mock_print:
@@ -151,7 +151,7 @@ class TestSlotSimulatorCore(unittest.TestCase):
         mock_print.assert_called_once_with("[slot slot_cb] published slot_cb-0001")
 
     def test_start_stop_clean_shutdown_with_event(self):
-        sim = SlotSimulator(slot_id="slot_shutdown")
+        sim = SensorNode(slot_id="slot_shutdown")
         sim._client = Mock()
 
         def fake_run_loop() -> None:
@@ -181,8 +181,8 @@ class TestSlotSimulatorCore(unittest.TestCase):
             mode="random",
             min_hold_times={"FREE": 0, "OCCUPIED": 0, "RESERVED": 300},
         )
-        sim1 = SlotSimulator(**kwargs)
-        sim2 = SlotSimulator(**kwargs)
+        sim1 = SensorNode(**kwargs)
+        sim2 = SensorNode(**kwargs)
         sim1._client = Mock()
         sim2._client = Mock()
 
@@ -207,8 +207,8 @@ class TestSlotSimulatorCore(unittest.TestCase):
             mode="random",
             min_hold_times={"FREE": 0, "OCCUPIED": 0, "RESERVED": 300},
         )
-        sim1 = SlotSimulator(**common_kwargs, seed=100)
-        sim2 = SlotSimulator(**common_kwargs, seed=200)
+        sim1 = SensorNode(**common_kwargs, seed=100)
+        sim2 = SensorNode(**common_kwargs, seed=200)
 
         states1: list[str] = []
         states2: list[str] = []
@@ -224,7 +224,7 @@ class TestSlotSimulatorCore(unittest.TestCase):
 
     # C3
     def test_phase_offset_occurs_before_loop(self):
-        sim = SlotSimulator(slot_id="slot_phase", seed=42, transition_interval=1.0, jitter_factor=0.0)
+        sim = SensorNode(slot_id="slot_phase", seed=42, transition_interval=1.0, jitter_factor=0.0)
         wait_timeouts: list[float] = []
         call_count = [0]
 
@@ -251,7 +251,7 @@ class TestSlotSimulatorCore(unittest.TestCase):
 
     # C4
     def test_jitter_varies_sleep_duration(self):
-        sim = SlotSimulator(slot_id="slot_jitter", seed=7, transition_interval=1.0, jitter_factor=0.2)
+        sim = SensorNode(slot_id="slot_jitter", seed=7, transition_interval=1.0, jitter_factor=0.2)
         wait_timeouts: list[float] = []
         call_count = [0]
 
@@ -278,7 +278,7 @@ class TestSlotSimulatorCore(unittest.TestCase):
 
     # C5
     def test_no_publish_without_transition(self):
-        sim = SlotSimulator(
+        sim = SensorNode(
             slot_id="slot_nopub",
             mode="random",
             seed=0,
@@ -294,7 +294,7 @@ class TestSlotSimulatorCore(unittest.TestCase):
 
     # C6
     def test_payload_schema_matches_protocol(self):
-        sim = SlotSimulator(slot_id="slot_schema", qos=2, seed=1)
+        sim = SensorNode(slot_id="slot_schema", qos=2, seed=1)
         sim._state = "FREE"
         sim._message_counter = 0
         client = Mock()
@@ -315,7 +315,7 @@ class TestSlotSimulatorCore(unittest.TestCase):
         self.assertEqual(payload["qos"], 2)
 
 
-class TestSlotSimulatorIntegration(unittest.TestCase):
+class TestSensorNodeIntegration(unittest.TestCase):
     def _broker_available(self, host: str = "localhost", port: int = 1883) -> bool:
         try:
             with socket.create_connection((host, port), timeout=1.0):
@@ -324,7 +324,7 @@ class TestSlotSimulatorIntegration(unittest.TestCase):
             return False
 
     # A7
-    def test_one_simulator_10s_json_arrives_at_broker(self):
+    def test_one_sensor_node_10s_json_arrives_at_broker(self):
         if not self._broker_available():
             self.skipTest("MQTT broker not available on localhost:1883")
 
@@ -333,7 +333,7 @@ class TestSlotSimulatorIntegration(unittest.TestCase):
         received: list[dict] = []
         lock = threading.Lock()
 
-        subscriber = mqtt.Client()
+        parking_controller = mqtt.Client()
 
         def on_message(client: mqtt.Client, userdata, msg: mqtt.MQTTMessage) -> None:
             _ = client, userdata
@@ -341,12 +341,12 @@ class TestSlotSimulatorIntegration(unittest.TestCase):
             with lock:
                 received.append({"topic": msg.topic, "payload": payload})
 
-        subscriber.on_message = on_message
-        subscriber.connect("localhost", 1883)
-        subscriber.subscribe(topic, qos=1)
-        subscriber.loop_start()
+        parking_controller.on_message = on_message
+        parking_controller.connect("localhost", 1883)
+        parking_controller.subscribe(topic, qos=1)
+        parking_controller.loop_start()
 
-        simulator = SlotSimulator(
+        sensor_node = SensorNode(
             slot_id=slot_id,
             qos=1,
             transition_interval=1.0,
@@ -356,13 +356,13 @@ class TestSlotSimulatorIntegration(unittest.TestCase):
         )
 
         try:
-            simulator.start()
+            sensor_node.start()
             time.sleep(10.0)
-            simulator.stop()
+            sensor_node.stop()
             time.sleep(0.5)
         finally:
-            subscriber.loop_stop()
-            subscriber.disconnect()
+            parking_controller.loop_stop()
+            parking_controller.disconnect()
 
         self.assertGreaterEqual(len(received), 3)
 

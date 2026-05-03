@@ -22,7 +22,7 @@ class EventBus:
     def start(self) -> None:
         if self._thread is not None and self._thread.is_alive():
             return
-        self._thread = threading.Thread(target=self._drain, name="subscriber-event-bus", daemon=True)
+        self._thread = threading.Thread(target=self._drain, name="parking-controller-event-bus", daemon=True)
         self._thread.start()
 
     def stop(self) -> None:

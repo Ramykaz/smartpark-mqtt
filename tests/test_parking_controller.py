@@ -1,4 +1,4 @@
-"""Tests for subscriber components."""
+"""Tests for parking_controller components."""
 
 import json
 import os
@@ -12,10 +12,10 @@ from unittest.mock import patch
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from shared.protocol import Event
-from subscriber.alerts import AlertService
-from subscriber.consumer import MQTTConsumer
-from subscriber.measurement import MeasurementLogger
-from subscriber.parking_state import ParkingLotState
+from parking_controller.alerts import AlertService
+from parking_controller.consumer import MQTTConsumer
+from parking_controller.measurement import MeasurementLogger
+from parking_controller.parking_state import ParkingLotState
 
 
 class TestMQTTConsumer(unittest.TestCase):
@@ -37,8 +37,8 @@ class TestMQTTConsumer(unittest.TestCase):
             order.append("json")
             return original_json_loads(payload)
 
-        with patch("subscriber.consumer.time.time_ns", side_effect=fake_time_ns), patch(
-            "subscriber.consumer.json.loads", side_effect=fake_json_loads
+        with patch("parking_controller.consumer.time.time_ns", side_effect=fake_time_ns), patch(
+            "parking_controller.consumer.json.loads", side_effect=fake_json_loads
         ):
             consumer.on_message(None, None, msg)
 

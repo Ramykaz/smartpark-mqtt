@@ -1,4 +1,4 @@
-"""Integration test: SlotSimulator publishers + subscriber pipeline via Mosquitto.
+"""Integration test: SensorNode publishers + ParkingController pipeline via Mosquitto.
 
 Exercises real components end-to-end — no mocking of the MQTT client.
 Requires a running Mosquitto broker on localhost:1883.
@@ -21,8 +21,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from shared.db import DatabaseInit
 from shared.protocol import BROKER_HOST, BROKER_PORT, ExperimentConfig
-from simulators.slot_simulator import SlotSimulator
-from subscriber import subscriber
+from sensors.sensor_node import SensorNode
+from parking_controller import parking_controller
 
 
 def broker_available(host: str = BROKER_HOST, port: int = BROKER_PORT) -> bool:
@@ -34,7 +34,7 @@ def broker_available(host: str = BROKER_HOST, port: int = BROKER_PORT) -> bool:
 
 
 @unittest.skipUnless(broker_available(), "Mosquitto broker is not reachable on localhost:1883")
-class TestPublisherSubscriberBrokerIntegration(unittest.TestCase):
+class TestPublisherParkingControllerBrokerIntegration(unittest.TestCase):
     def _cleanup_dir(self, path: str) -> None:
         for _ in range(5):
             try:
@@ -43,7 +43,7 @@ class TestPublisherSubscriberBrokerIntegration(unittest.TestCase):
             except PermissionError:
                 time.sleep(0.2)
 
-    def test_slot_simulators_and_subscriber_exchange_telemetry_via_broker(self) -> None:
+    def test_sensor_nodes_and_parking_controller_exchange_telemetry_via_broker(self) -> None:
         slot_ids = [f"slot_{i:02d}" for i in range(1, 4)]
         run_id = f"integration_{int(time.time())}"
         msg_id_pattern = re.compile(r"^slot_\d{2}-\d{4}$")
@@ -71,7 +71,7 @@ class TestPublisherSubscriberBrokerIntegration(unittest.TestCase):
             )
 
             simulators = [
-                SlotSimulator(
+                SensorNode(
                     slot_id=slot_id,
                     qos=1,
                     transition_interval=0.35,
@@ -83,7 +83,7 @@ class TestPublisherSubscriberBrokerIntegration(unittest.TestCase):
                 for index, slot_id in enumerate(slot_ids, start=1)
             ]
 
-            measurement = subscriber.start(config, enable_logging=True)
+            measurement = parking_controller.start(config, enable_logging=True)
             for sim in simulators:
                 sim.start()
 
@@ -94,7 +94,7 @@ class TestPublisherSubscriberBrokerIntegration(unittest.TestCase):
             simulators = []
             time.sleep(1.0)
 
-            subscriber.stop()
+            parking_controller.stop()
             measurement.flush()
             measurement.close()
             measurement = None
@@ -136,7 +136,7 @@ class TestPublisherSubscriberBrokerIntegration(unittest.TestCase):
                 except Exception:
                     pass
             try:
-                subscriber.stop()
+                parking_controller.stop()
             except Exception:
                 pass
             if measurement is not None:

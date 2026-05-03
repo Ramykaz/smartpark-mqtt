@@ -1,5 +1,6 @@
 # Progress
-
+## v0.7 - 2026-05-03
+- Renamed components
 ## v0.6 - 2026-05-03
 
 - Built a complete PyQt5 desktop dashboard (`ui/`) for real-time parking lot visualisation.

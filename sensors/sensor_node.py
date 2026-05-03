@@ -1,4 +1,4 @@
-"""Slot simulator publisher for SmartPark MQTT."""
+"""Sensor node publisher for SmartPark MQTT."""
 
 from __future__ import annotations
 
@@ -19,10 +19,10 @@ from shared.protocol import (
 	Event,
 	build_status_message,
 )
-from simulators.publisher_logger import PublisherLogger
+from sensors.publisher_logger import PublisherLogger
 
 
-class SlotSimulator:
+class SensorNode:
 	"""Publishes parking slot telemetry with a simple FREE/OCCUPIED FSM.
 
 	Publishes ONLY on state transitions — no periodic heartbeat.
@@ -195,9 +195,9 @@ class SlotSimulator:
 
 
 if __name__ == "__main__":
-	simulator = SlotSimulator(slot_id="slot_01", qos=0)
-	simulator.start()
+	sensor_node = SensorNode(slot_id="slot_01", qos=0)
+	sensor_node.start()
 	try:
 		time.sleep(10)
 	finally:
-		simulator.stop()
+		sensor_node.stop()

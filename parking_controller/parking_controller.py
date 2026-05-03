@@ -1,13 +1,13 @@
-"""Thin coordinator for subscriber components."""
+"""Thin coordinator for parking controller components."""
 
 from __future__ import annotations
 
-from subscriber.measurement import MeasurementLogger
+from parking_controller.measurement import MeasurementLogger
 from shared.protocol import BROKER_HOST, BROKER_PORT, ExperimentConfig, slot_ids_for_run
-from subscriber.alerts import AlertService
-from subscriber.bus import EventBus
-from subscriber.consumer import MQTTConsumer
-from subscriber.parking_state import ParkingLotState
+from parking_controller.alerts import AlertService
+from parking_controller.bus import EventBus
+from parking_controller.consumer import MQTTConsumer
+from parking_controller.parking_state import ParkingLotState
 
 _bus: EventBus | None = None
 _consumer: MQTTConsumer | None = None

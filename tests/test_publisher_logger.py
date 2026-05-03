@@ -1,4 +1,4 @@
-"""Tests for simulators.publisher_logger."""
+"""Tests for sensors.publisher_logger."""
 
 import os
 import sqlite3
@@ -9,7 +9,7 @@ import unittest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from shared.protocol import Event
-from simulators.publisher_logger import PublisherLogger
+from sensors.publisher_logger import PublisherLogger
 
 
 class TestPublisherLogger(unittest.TestCase):

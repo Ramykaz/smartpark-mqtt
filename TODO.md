@@ -53,13 +53,13 @@ Components that likely need refactoring:
 ## [x 18-04-2026] Adding shared protocol to slot_simulator
 ## [x] Integration tests
 
-## [] Rename slotsimulator and subscriber
+## [x] Rename slotsimulator and subscriber
 
 ## [] MQTT topic coverage gaps
 
 Three protocol topics are defined in `shared/protocol.py` but not fully handled end-to-end:
 
-### [] `parking/commands/{slot_id}`
+### [x] `parking/commands/{slot_id}`
 - The UI publishes a RESERVE command to this topic when a FREE slot is clicked.
 - Nothing subscribes to it. A command handler is needed that:
   - Subscribes to `parking/commands/#`
@@ -68,10 +68,10 @@ Three protocol topics are defined in `shared/protocol.py` but not fully handled 
 
 ### [] `parking/system/summary`
 - The UI subscribes to this topic and uses it to update the summary panel (FREE / OCCUPIED / RESERVED counts) and trigger the 90% alert banner.
-- Nothing publishes it. The subscriber backend (`subscriber/parking_state.py`, `subscriber/alerts.py`) tracks counts internally but never emits a summary message.
-- A summary publisher is needed — either inside the subscriber or as a separate aggregator — that emits to this topic whenever slot counts change.
+- Nothing publishes it. The parking controller backend (`parking_controller/parking_state.py`, `parking_controller/alerts.py`) tracks counts internally but never emits a summary message.
+- A summary publisher is needed — either inside the parking controller or as a separate aggregator — that emits to this topic whenever slot counts change.
 
 ### [] `parking/system/alert`
 - Defined in the protocol but not subscribed to or published anywhere in the current codebase.
 - The UI uses `signals.alert_triggered` driven by the summary ratio, so the alert banner works without this topic — but a dedicated alert topic would allow external systems to react to lot-full conditions.
-- Decide: publish here from the subscriber's `AlertService`, or remove the constant if it will stay unused.
+- Decide: publish here from the parking controller's `AlertService`, or remove the constant if it will stay unused.

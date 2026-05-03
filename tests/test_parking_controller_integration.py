@@ -1,6 +1,6 @@
-"""Integration tests for subscriber.ParkingSubscriber.
+"""Integration tests for parking_controller.ParkingSubscriber.
 
-These tests are written to be resilient while the subscriber implementation is
+These tests are written to be resilient while the parking controller implementation is
 still evolving. They focus on contract-level behavior from shared.protocol and
 avoid brittle assumptions about internal implementation details.
 """
@@ -33,8 +33,8 @@ from shared.protocol import (
 )
 
 
-def _get_subscriber_class() -> type | None:
-    module = import_module("subscriber.subscriber")
+def _get_parking_controller_class() -> type | None:
+    module = import_module("parking_controller.parking_controller")
     return getattr(module, "ParkingSubscriber", None)
 
 
@@ -46,7 +46,7 @@ def _broker_available(host: str = BROKER_HOST, port: int = BROKER_PORT) -> bool:
         return False
 
 
-def _build_subscriber_instance(cls: type, db_path: str):
+def _build_parking_controller_instance(cls: type, db_path: str):
     signature = inspect.signature(cls)
     kwargs: dict[str, Any] = {}
 
@@ -57,7 +57,7 @@ def _build_subscriber_instance(cls: type, db_path: str):
         if name in {"db_path", "sqlite_db_path", "database_path"}:
             kwargs[name] = db_path
         elif name in {"experiment_id", "run_id"}:
-            kwargs[name] = "it_subscriber"
+            kwargs[name] = "it_parking_controller"
         elif name in {"broker_host", "host"}:
             kwargs[name] = BROKER_HOST
         elif name in {"broker_port", "port"}:
@@ -71,25 +71,25 @@ def _build_subscriber_instance(cls: type, db_path: str):
                 f"Unsupported required constructor parameter for integration tests: {name!r}"
             )
 
-    subscriber = cls(**kwargs)
+    parking_controller = cls(**kwargs)
 
     for attr_name in ("db_path", "sqlite_db_path", "database_path"):
-        if hasattr(subscriber, attr_name):
-            setattr(subscriber, attr_name, db_path)
+        if hasattr(parking_controller, attr_name):
+            setattr(parking_controller, attr_name, db_path)
 
-    return subscriber
+    return parking_controller
 
 
-def _find_message_handler(subscriber: Any) -> Callable[..., Any]:
+def _find_message_handler(parking_controller: Any) -> Callable[..., Any]:
     for name in ("on_message", "_on_message", "handle_message", "_handle_message"):
-        method = getattr(subscriber, name, None)
+        method = getattr(parking_controller, name, None)
         if callable(method):
             return method
-    raise unittest.SkipTest("Subscriber does not expose a message handler callback yet")
+    raise unittest.SkipTest("ParkingController does not expose a message handler callback yet")
 
 
-def _dispatch_message(subscriber: Any, topic: str, payload_bytes: bytes) -> None:
-    handler = _find_message_handler(subscriber)
+def _dispatch_message(parking_controller: Any, topic: str, payload_bytes: bytes) -> None:
+    handler = _find_message_handler(parking_controller)
     msg = SimpleNamespace(topic=topic, payload=payload_bytes)
 
     param_count = len(inspect.signature(handler).parameters)
@@ -105,16 +105,16 @@ def _dispatch_message(subscriber: Any, topic: str, payload_bytes: bytes) -> None
         )
 
 
-class TestSubscriberIntegration(unittest.TestCase):
+class TestParkingControllerIntegration(unittest.TestCase):
     def setUp(self) -> None:
         self._tmp_dir = tempfile.TemporaryDirectory()
-        self.db_path = os.path.join(self._tmp_dir.name, "subscriber_it.db")
+        self.db_path = os.path.join(self._tmp_dir.name, "parking_controller_it.db")
 
-        cls = _get_subscriber_class()
+        cls = _get_parking_controller_class()
         if cls is None:
-            self.skipTest("ParkingSubscriber class is not implemented in subscriber/subscriber.py")
+            self.skipTest("ParkingSubscriber class is not implemented in parking_controller/parking_controller.py")
 
-        self.subscriber = _build_subscriber_instance(cls, self.db_path)
+        self.parking_controller = _build_parking_controller_instance(cls, self.db_path)
         self._ensure_messages_table()
 
     def tearDown(self) -> None:
@@ -123,7 +123,7 @@ class TestSubscriberIntegration(unittest.TestCase):
     def _ensure_messages_table(self) -> None:
         init_methods = ("init_db", "_init_db", "setup_db", "_setup_db")
         for method_name in init_methods:
-            method = getattr(self.subscriber, method_name, None)
+            method = getattr(self.parking_controller, method_name, None)
             if callable(method):
                 method()
                 return
@@ -148,7 +148,7 @@ class TestSubscriberIntegration(unittest.TestCase):
         msg["sent_ts"] = int(time.time() * 1000)
 
         topic = TELEMETRY_TOPIC.format(slot_id="slot_42")
-        _dispatch_message(self.subscriber, topic, json.dumps(msg).encode("utf-8"))
+        _dispatch_message(self.parking_controller, topic, json.dumps(msg).encode("utf-8"))
 
         rows = self._read_rows()
         self.assertGreaterEqual(len(rows), 1)
@@ -169,8 +169,8 @@ class TestSubscriberIntegration(unittest.TestCase):
         msg["sent_ts"] = int(time.time() * 1000)
         encoded = json.dumps(msg).encode("utf-8")
 
-        _dispatch_message(self.subscriber, topic, encoded)
-        _dispatch_message(self.subscriber, topic, encoded)
+        _dispatch_message(self.parking_controller, topic, encoded)
+        _dispatch_message(self.parking_controller, topic, encoded)
 
         rows = self._read_rows()
         self.assertGreaterEqual(len(rows), 1)
@@ -183,27 +183,27 @@ class TestSubscriberIntegration(unittest.TestCase):
         topic = TELEMETRY_TOPIC.format(slot_id="slot_bad")
         before = len(self._read_rows())
 
-        _dispatch_message(self.subscriber, topic, b"{not-valid-json")
+        _dispatch_message(self.parking_controller, topic, b"{not-valid-json")
 
         after = len(self._read_rows())
         self.assertEqual(after, before)
 
 
 @unittest.skipUnless(_broker_available(), "MQTT broker not available on configured host/port")
-class TestSubscriberLiveBrokerIntegration(unittest.TestCase):
+class TestParkingControllerLiveBrokerIntegration(unittest.TestCase):
     def test_live_message_is_received_and_processed(self) -> None:
-        cls = _get_subscriber_class()
+        cls = _get_parking_controller_class()
         if cls is None:
-            self.skipTest("ParkingSubscriber class is not implemented in subscriber/subscriber.py")
+            self.skipTest("ParkingSubscriber class is not implemented in parking_controller/parking_controller.py")
 
         with tempfile.TemporaryDirectory() as tmp_dir:
-            db_path = os.path.join(tmp_dir, "subscriber_live.db")
-            subscriber = _build_subscriber_instance(cls, db_path)
+            db_path = os.path.join(tmp_dir, "parking_controller_live.db")
+            parking_controller = _build_parking_controller_instance(cls, db_path)
 
-            start = getattr(subscriber, "start", None)
-            stop = getattr(subscriber, "stop", None)
+            start = getattr(parking_controller, "start", None)
+            stop = getattr(parking_controller, "stop", None)
             if not callable(start) or not callable(stop):
-                self.skipTest("Subscriber does not expose start/stop lifecycle methods yet")
+                self.skipTest("ParkingController does not expose start/stop lifecycle methods yet")
 
             with sqlite3.connect(db_path) as conn:
                 conn.execute(MESSAGES_TABLE_SCHEMA)

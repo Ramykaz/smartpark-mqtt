@@ -33,7 +33,7 @@
 
 ### `Event`
 
-Represents one telemetry message after the subscriber has parsed and timestamped it.
+Represents one telemetry message after the parking controller has parsed and timestamped it.
 
 | Field | Meaning | Set by |
 | --- | --- | --- |
@@ -41,9 +41,9 @@ Represents one telemetry message after the subscriber has parsed and timestamped
 | `state: str` | Slot state carried in the telemetry payload. | Publisher |
 | `msg_id: str` | Unique message identifier. | Publisher |
 | `sent_ts: int` | Publish timestamp in milliseconds. | Publisher |
-| `recv_ts: int` | Receive timestamp in milliseconds. | Subscriber at receive time |
+| `recv_ts: int` | Receive timestamp in milliseconds. | ParkingController at receive time |
 | `qos: int` | MQTT QoS used for the publish. | Publisher |
-| `raw_topic: str` | Exact MQTT topic the message arrived on. | Subscriber at receive time |
+| `raw_topic: str` | Exact MQTT topic the message arrived on. | ParkingController at receive time |
 
 ### `ExperimentConfig`
 
@@ -62,4 +62,4 @@ Represents one experiment run configuration shared across publisher, subscriber,
 | `started_at: int` | Run start timestamp. | Publisher / experiment runner |
 | `db_path: str` | SQLite database path; defaults to `data/experiment.db`. | Publisher / experiment runner |
 
-`ExperimentConfig` is not enriched by the subscriber at receive time; it is created before the run starts and then stored as run metadata.
+`ExperimentConfig` is not enriched by the parking controller at receive time; it is created before the run starts and then stored as run metadata.

@@ -121,7 +121,7 @@ class TestExperimentController(unittest.TestCase):
             def close(self) -> None:
                 call_order.append(f"publisher.close.{self.index}")
 
-        class FakeSlotSimulator:
+        class FakeSensorNode:
             def __init__(self, slot_id: str, **kwargs: object) -> None:
                 _ = kwargs
                 self.slot_id = slot_id
@@ -138,38 +138,38 @@ class TestExperimentController(unittest.TestCase):
         original_database_init = controller.DatabaseInit
         original_apply_netem = controller.apply_netem
         original_clear_netem = controller.clear_netem
-        original_subscriber_start = controller.subscriber.start
-        original_subscriber_stop = controller.subscriber.stop
+        original_parking_controller_start = controller.parking_controller.start
+        original_parking_controller_stop = controller.parking_controller.stop
         original_publisher_logger = controller.PublisherLogger
-        original_slot_simulator = controller.SlotSimulator
+        original_sensor_node = controller.SensorNode
 
         try:
             controller.DatabaseInit = FakeDatabase
             controller.apply_netem = lambda loss_pct, delay_ms, interface: call_order.append("apply_netem")
             controller.clear_netem = lambda interface: call_order.append("clear_netem")
-            controller.subscriber.start = lambda run_config, enable_logging=False: call_order.append("subscriber.start") or measurement_logger
-            controller.subscriber.stop = lambda: call_order.append("subscriber.stop")
+            controller.parking_controller.start = lambda run_config, enable_logging=False: call_order.append("parking_controller.start") or measurement_logger
+            controller.parking_controller.stop = lambda: call_order.append("parking_controller.stop")
             controller.PublisherLogger = FakePublisherLogger
-            controller.SlotSimulator = FakeSlotSimulator
+            controller.SensorNode = FakeSensorNode
 
             controller._run_experiment(config, netem_interface="lo", stop_event=stop_event)
         finally:
             controller.DatabaseInit = original_database_init
             controller.apply_netem = original_apply_netem
             controller.clear_netem = original_clear_netem
-            controller.subscriber.start = original_subscriber_start
-            controller.subscriber.stop = original_subscriber_stop
+            controller.parking_controller.start = original_parking_controller_start
+            controller.parking_controller.stop = original_parking_controller_stop
             controller.PublisherLogger = original_publisher_logger
-            controller.SlotSimulator = original_slot_simulator
+            controller.SensorNode = original_sensor_node
 
         self.assertLess(call_order.index("db.initialize"), call_order.index("db.insert_run"))
         self.assertLess(call_order.index("db.insert_run"), call_order.index("apply_netem"))
-        self.assertLess(call_order.index("apply_netem"), call_order.index("subscriber.start"))
-        self.assertLess(call_order.index("subscriber.start"), call_order.index("sim.start.slot_01"))
-        self.assertLess(call_order.index("subscriber.start"), call_order.index("sim.start.slot_02"))
-        self.assertLess(call_order.index("sim.stop.slot_01"), call_order.index("subscriber.stop"))
-        self.assertLess(call_order.index("sim.stop.slot_02"), call_order.index("subscriber.stop"))
-        self.assertLess(call_order.index("subscriber.stop"), call_order.index("measurement.flush"))
+        self.assertLess(call_order.index("apply_netem"), call_order.index("parking_controller.start"))
+        self.assertLess(call_order.index("parking_controller.start"), call_order.index("sim.start.slot_01"))
+        self.assertLess(call_order.index("parking_controller.start"), call_order.index("sim.start.slot_02"))
+        self.assertLess(call_order.index("sim.stop.slot_01"), call_order.index("parking_controller.stop"))
+        self.assertLess(call_order.index("sim.stop.slot_02"), call_order.index("parking_controller.stop"))
+        self.assertLess(call_order.index("parking_controller.stop"), call_order.index("measurement.flush"))
         self.assertLess(call_order.index("measurement.flush"), call_order.index("measurement.close"))
         self.assertLess(call_order.index("measurement.close"), call_order.index("publisher.close.1"))
         self.assertLess(call_order.index("measurement.close"), call_order.index("publisher.close.2"))

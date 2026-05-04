@@ -24,6 +24,9 @@ COMMAND_TOPIC = "parking/commands/{slot_id}"
 SUMMARY_TOPIC = "parking/system/summary"
 ALERT_TOPIC = "parking/system/alert"
 TELEMETRY_WILDCARD = "parking/telemetry/+"
+COMMAND_TOPIC_PREFIX        = "parking/commands/"
+COMMAND_SUBSCRIBE_WILDCARD  = "parking/commands/#"
+RESERVATION_TIMEOUT_S       = 300
 
 # ---------------------------------------------------------------------------
 # C. Valid states and occupancy alert threshold

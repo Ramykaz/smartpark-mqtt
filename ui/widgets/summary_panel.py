@@ -1,28 +1,29 @@
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QFrame, QHBoxLayout, QLabel
+from PyQt5.QtWidgets import QHBoxLayout, QLabel, QWidget
 
 
-class SummaryPanel(QFrame):
+def _make_label(text: str, color: str) -> QLabel:
+    lbl = QLabel(text)
+    lbl.setAlignment(Qt.AlignCenter)
+    lbl.setStyleSheet(
+        f"background-color: {color}; color: white; font-weight: bold; "
+        "border-radius: 6px; padding: 8px 16px;"
+    )
+    return lbl
+
+
+class SummaryPanel(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setStyleSheet(
-            "SummaryPanel { background-color: #F5F5F5; border: 1px solid #BDBDBD;"
-            " border-radius: 4px; padding: 8px; }"
-        )
-
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(8, 8, 8, 8)
-        layout.setSpacing(24)
-
-        self._free_label     = QLabel("FREE: 0")
-        self._occupied_label = QLabel("OCCUPIED: 0")
-        self._reserved_label = QLabel("RESERVED: 0")
-
-        for label in (self._free_label, self._occupied_label, self._reserved_label):
-            label.setAlignment(Qt.AlignCenter)
-            layout.addWidget(label)
+        layout.setSpacing(12)
+        self._free     = _make_label("FREE: 0",     "#43A047")
+        self._occupied = _make_label("OCCUPIED: 0", "#E53935")
+        self._reserved = _make_label("RESERVED: 0", "#FB8C00")
+        for w in (self._free, self._occupied, self._reserved):
+            layout.addWidget(w)
 
     def update(self, free: int, occupied: int, reserved: int):
-        self._free_label.setText(f"FREE: {free}")
-        self._occupied_label.setText(f"OCCUPIED: {occupied}")
-        self._reserved_label.setText(f"RESERVED: {reserved}")
+        self._free.setText(f"FREE: {free}")
+        self._occupied.setText(f"OCCUPIED: {occupied}")
+        self._reserved.setText(f"RESERVED: {reserved}")

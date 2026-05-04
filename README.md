@@ -62,3 +62,16 @@ python -m pytest tests/
 # With the standard library test runner
 python -m unittest discover tests/
 ```
+
+
+``` bash
+which python      # should  point to .venv/bin/python
+
+python -m experiments.experiment_controller --qos 1 --n-slots 5 --duration 60
+
+python -m sensors.sensor_node
+
+
+python3 -m ui.main --slots 10 --broker localhost --port 1883
+
+```

@@ -34,7 +34,7 @@ def start(config: ExperimentConfig, enable_logging: bool = False) -> Measurement
 
     try:
         _bus.start()
-        _consumer = MQTTConsumer(BROKER_HOST, BROKER_PORT, _bus.publish)
+        _consumer = MQTTConsumer(BROKER_HOST, BROKER_PORT, _bus.publish, _state)
         _consumer.connect()
         return _measurement
     except Exception:

@@ -1,8 +1,10 @@
 import json
 
 import paho.mqtt.client as mqtt
+from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QMainWindow, QVBoxLayout, QWidget
 
+from shared.protocol import COMMAND_TOPIC
 from ui.signals import ParkingSignals
 from ui.widgets.alert_banner import AlertBanner
 from ui.widgets.slot_grid import SlotGrid
@@ -35,14 +37,19 @@ class ParkingDashboard(QMainWindow):
         self.signals.alert_triggered.connect(self._banner.set_active)
         self._grid.reserve_requested.connect(self._on_reserve_requested)
 
-        # 2. MQTT SETUP
+        # 2. MQTT SETUP — deferred so the window appears before the blocking connect
+        self._broker_host = broker_host
+        self._broker_port = broker_port
         self._client = mqtt.Client()
         self._client.on_connect = self._on_connect
         self._client.on_message = self._on_message
+        QTimer.singleShot(0, self._connect_mqtt)
+
+    def _connect_mqtt(self):
         try:
-            self._client.connect(broker_host, broker_port, keepalive=60)
+            self._client.connect(self._broker_host, self._broker_port, keepalive=60)
         except Exception as exc:
-            print(f"[MQTT] Could not connect to {broker_host}:{broker_port} — {exc}")
+            print(f"[MQTT] Could not connect to {self._broker_host}:{self._broker_port} — {exc}")
         self._client.loop_start()
 
     # 3. on_connect
@@ -76,7 +83,7 @@ class ParkingDashboard(QMainWindow):
 
     # 5. Reservation handler
     def _on_reserve_requested(self, slot_id: str):
-        topic   = f"parking/commands/{slot_id}"
+        topic   = COMMAND_TOPIC.format(slot_id=slot_id)
         payload = json.dumps({"command": "RESERVE", "slot_id": slot_id})
         self._client.publish(topic, payload, qos=1)
         self._grid.update_slot(slot_id, "REQUESTING")

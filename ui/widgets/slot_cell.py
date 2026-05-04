@@ -1,47 +1,37 @@
 from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtWidgets import QFrame, QLabel, QVBoxLayout, QApplication
+from PyQt5.QtWidgets import QPushButton
 
 _STATE_COLORS = {
-    "FREE":       "#4CAF50",
-    "OCCUPIED":   "#F44336",
-    "RESERVED":   "#FFC107",
-    "REQUESTING": "#9E9E9E",
+    "FREE":       "#43A047",
+    "OCCUPIED":   "#E53935",
+    "RESERVED":   "#FB8C00",
+    "REQUESTING": "#1E88E5",
 }
 
 
-class SlotCell(QFrame):
+class SlotCell(QPushButton):
     reserve_requested = pyqtSignal(str)
 
     def __init__(self, slot_id: str, parent=None):
         super().__init__(parent)
         self._slot_id = slot_id
-        self._state = ""
-
+        self._state = "FREE"
         self.setFixedSize(90, 70)
+        self.clicked.connect(self._on_clicked)
+        self._render()
 
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(4, 4, 4, 4)
-        layout.setSpacing(2)
-
-        self._id_label = QLabel(slot_id)
-        self._id_label.setAlignment(Qt.AlignCenter)
-        self._id_label.setStyleSheet("font-weight: bold; font-size: 13px; background: transparent;")
-
-        self._state_label = QLabel("")
-        self._state_label.setAlignment(Qt.AlignCenter)
-        self._state_label.setStyleSheet("font-size: 11px; background: transparent;")
-
-        layout.addWidget(self._id_label)
-        layout.addWidget(self._state_label)
-
-    def set_state(self, state: str):
+    def update_state(self, state: str):
         self._state = state
-        self._state_label.setText(state)
-        color = _STATE_COLORS.get(state)
-        if color:
-            self.setStyleSheet(f"SlotCell {{ background-color: {color}; border-radius: 6px; }}")
+        self._render()
 
-    def mousePressEvent(self, event):
-        if event.button() == Qt.LeftButton and self._state == "FREE":
+    def _render(self):
+        color = _STATE_COLORS.get(self._state, "#9E9E9E")
+        self.setText(f"{self._slot_id}\n{self._state}")
+        self.setStyleSheet(
+            f"background-color: {color}; color: white; font-weight: bold; border-radius: 6px;"
+        )
+        self.setCursor(Qt.PointingHandCursor if self._state == "FREE" else Qt.ArrowCursor)
+
+    def _on_clicked(self):
+        if self._state == "FREE":
             self.reserve_requested.emit(self._slot_id)
-        super().mousePressEvent(event)

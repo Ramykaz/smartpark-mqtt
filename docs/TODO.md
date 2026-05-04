@@ -75,3 +75,9 @@ Three protocol topics are defined in `shared/protocol.py` but not fully handled 
 - Defined in the protocol but not subscribed to or published anywhere in the current codebase.
 - The UI uses `signals.alert_triggered` driven by the summary ratio, so the alert banner works without this topic — but a dedicated alert topic would allow external systems to react to lot-full conditions.
 - Decide: publish here from the parking controller's `AlertService`, or remove the constant if it will stay unused.
+
+## [] Dashboard
+### [x] Reserve via UI
+  - [] perhaps look into timeout?
+### [] Summary widget
+### [] Alert eidget

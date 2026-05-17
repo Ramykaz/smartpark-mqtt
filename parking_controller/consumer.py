@@ -41,6 +41,9 @@ class MQTTConsumer:
         self._client.subscribe(COMMAND_SUBSCRIBE_WILDCARD, qos=1)
         self._client.loop_start()
 
+    def publish(self, topic: str, payload: str, qos: int = 0) -> None:
+        self._client.publish(topic, payload, qos=qos)
+
     def disconnect(self) -> None:
         self._client.loop_stop()
         self._client.disconnect()

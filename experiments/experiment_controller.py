@@ -96,6 +96,7 @@ def install_signal_handlers(stop_event: threading.Event) -> dict[int, signal.Han
 
     def handler(signum: int, frame: object) -> None:
         _ = signum, frame
+        print("\nShutting down gracefully…", flush=True)
         stop_event.set()
 
     for sig in (signal.SIGINT, signal.SIGTERM):

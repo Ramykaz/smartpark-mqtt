@@ -29,7 +29,7 @@ class EventBus:
         if self._thread is None:
             return
         self._queue.put(None)
-        self._thread.join()
+        self._thread.join(timeout=5)
         self._thread = None
 
     def _drain(self) -> None:

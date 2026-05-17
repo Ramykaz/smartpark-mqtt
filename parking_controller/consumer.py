@@ -66,6 +66,25 @@ class MQTTConsumer:
         )
         self.on_event(event)
 
+        # If the slot has an active reservation, the sensor's raw message already
+        # reached the UI directly via the broker. Re-publish the authoritative
+        # RESERVED state to correct what the UI displays.
+        if (
+            self._parking_lot_state is not None
+            and self._parking_lot_state.is_reservation_active(event.slot_id)
+        ):
+            ts = time.time_ns() // 1_000_000
+            correction = json.dumps({
+                "slot_id": event.slot_id,
+                "state": "RESERVED",
+                "msg_id": f"{event.slot_id}-lock-{ts}",
+                "sent_ts": ts,
+                "qos": 1,
+            })
+            self._client.publish(
+                TELEMETRY_TOPIC.format(slot_id=event.slot_id), correction, qos=1
+            )
+
     def handle_command(self, msg: mqtt.MQTTMessage) -> None:
         try:
             payload = json.loads(msg.payload)

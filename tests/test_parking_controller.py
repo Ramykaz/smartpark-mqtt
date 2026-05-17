@@ -108,6 +108,39 @@ class TestParkingLotState(unittest.TestCase):
         )
 
 
+    def test_update_blocked_while_reservation_active(self):
+        state = ParkingLotState(["slot_01"])
+        state.transition_to_reserved("slot_01", lambda: None)
+
+        # Sensor fires FREE/OCCUPIED — both should be ignored
+        state.update(Event("slot_01", "FREE", "slot_01-0002", 1000, 1100, 1, "parking/telemetry/slot_01"))
+        self.assertEqual(state.snapshot()["slot_01"], "RESERVED")
+
+        state.update(Event("slot_01", "OCCUPIED", "slot_01-0003", 1001, 1101, 1, "parking/telemetry/slot_01"))
+        self.assertEqual(state.snapshot()["slot_01"], "RESERVED")
+
+    def test_update_allowed_after_timer_cancelled(self):
+        import threading
+
+        released: list[None] = []
+
+        def expiry():
+            released.append(None)
+
+        state = ParkingLotState(["slot_01"])
+        state.transition_to_reserved("slot_01", expiry)
+
+        # Cancel the timer to simulate expiry
+        timer = state._timers["slot_01"]
+        timer.cancel()
+        timer.join()
+
+        # Now update should go through (timer is no longer alive)
+        state.update(Event("slot_01", "FREE", "slot_01-0004", 1000, 1100, 1, "parking/telemetry/slot_01"))
+        self.assertEqual(state.snapshot()["slot_01"], "FREE")
+        self.assertNotIn("slot_01", state._timers)
+
+
 class TestAlertService(unittest.TestCase):
     def test_check_fires_only_when_threshold_is_exceeded(self):
         state = ParkingLotState(["slot_01", "slot_02", "slot_03"])

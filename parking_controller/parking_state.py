@@ -12,7 +12,12 @@ class ParkingLotState:
         self._timers: dict[str, threading.Timer] = {}
 
     def update(self, event: Event) -> None:
+        timer = self._timers.get(event.slot_id)
+        if timer is not None and timer.is_alive():
+            return  # reservation active — block sensor-driven FREE/OCCUPIED until timeout
         self._states[event.slot_id] = event.state
+        if event.slot_id in self._timers:
+            del self._timers[event.slot_id]
 
     def transition_to_reserved(
         self,
@@ -27,6 +32,10 @@ class ParkingLotState:
         timer.start()
         self._timers[slot_id] = timer
         return True
+
+    def is_reservation_active(self, slot_id: str) -> bool:
+        timer = self._timers.get(slot_id)
+        return timer is not None and timer.is_alive()
 
     def get_counts(self) -> dict:
         free = sum(1 for state in self._states.values() if state == "FREE")

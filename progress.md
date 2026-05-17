@@ -1,4 +1,13 @@
 # Progress
+## v0.8 - 2026-05-17
+
+- Fixed reserved slots being overwritten by sensor telemetry during the reservation window.
+- Root cause: the broker fans out sensor telemetry to both the parking controller and the UI simultaneously. The parking controller's internal state guard blocked the conflicting update correctly, but the UI was already displaying the raw sensor state before any guard could act.
+- `ParkingLotState.update()` now returns early for any slot with an active reservation timer, preventing internal state corruption from sensor-driven FREE/OCCUPIED events.
+- `MQTTConsumer.on_message()` now detects when a received telemetry message conflicts with an active reservation and immediately re-publishes the authoritative `RESERVED` state to the telemetry topic, correcting what the UI displays.
+- Added `ParkingLotState.is_reservation_active(slot_id)` to expose timer liveness to the consumer without exposing internal timer state directly.
+- Added two unit tests covering the blocked-update and post-expiry-allowed-update cases.
+
 ## v0.7 - 2026-05-03
 - Renamed components
 ## v0.6 - 2026-05-03

@@ -1,8 +1,8 @@
 import json
 
 import paho.mqtt.client as mqtt
-from PyQt5.QtCore import QTimer
-from PyQt5.QtWidgets import QMainWindow, QVBoxLayout, QWidget
+from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtWidgets import QLabel, QMainWindow, QVBoxLayout, QWidget
 
 from shared.protocol import COMMAND_TOPIC
 from ui.signals import ParkingSignals
@@ -10,26 +10,37 @@ from ui.widgets.alert_banner import AlertBanner
 from ui.widgets.slot_grid import SlotGrid
 from ui.widgets.summary_panel import SummaryPanel
 
+_HEADER_STYLE = (
+    "color: #ECEFF1; font-size: 15px; font-weight: bold; "
+    "background-color: #102027; padding: 6px 0px; border-radius: 4px;"
+)
+
 
 class ParkingDashboard(QMainWindow):
     def __init__(self, slot_ids: list, broker_host: str, broker_port: int):
         super().__init__()
-        self.setWindowTitle("SmartPark")
+        self.setWindowTitle("SmartPark — Live Operations")
 
         # 1. WIDGET SETUP
         self.signals = ParkingSignals()
+
+        header = QLabel("SmartPark  ·  Live Lot Operations")
+        header.setAlignment(Qt.AlignCenter)
+        header.setStyleSheet(_HEADER_STYLE)
 
         self._banner  = AlertBanner()
         self._summary = SummaryPanel()
         self._grid    = SlotGrid(slot_ids)
 
         central = QWidget()
+        central.setStyleSheet("background-color: #162329;")
         layout  = QVBoxLayout(central)
-        layout.setContentsMargins(8, 8, 8, 8)
+        layout.setContentsMargins(10, 10, 10, 10)
         layout.setSpacing(8)
+        layout.addWidget(header)
         layout.addWidget(self._banner)
         layout.addWidget(self._summary)
-        layout.addWidget(self._grid)
+        layout.addWidget(self._grid, stretch=1)
         self.setCentralWidget(central)
 
         self.signals.slot_updated.connect(self._grid.update_slot)

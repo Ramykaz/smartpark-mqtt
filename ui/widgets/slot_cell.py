@@ -8,6 +8,14 @@ _STATE_COLORS = {
     "REQUESTING": "#1E88E5",
 }
 
+# Secondary cue: distinct Unicode symbol per state (shape, not hue)
+_STATE_SYMBOLS = {
+    "FREE":       "●",
+    "OCCUPIED":   "■",
+    "RESERVED":   "◆",
+    "REQUESTING": "◌",
+}
+
 
 class SlotCell(QPushButton):
     reserve_requested = pyqtSignal(str)
@@ -25,8 +33,9 @@ class SlotCell(QPushButton):
         self._render()
 
     def _render(self):
-        color = _STATE_COLORS.get(self._state, "#9E9E9E")
-        self.setText(f"{self._slot_id}\n{self._state}")
+        color  = _STATE_COLORS.get(self._state, "#9E9E9E")
+        symbol = _STATE_SYMBOLS.get(self._state, "?")
+        self.setText(f"{self._slot_id}\n{symbol} {self._state}")
         self.setStyleSheet(
             f"background-color: {color}; color: white; font-weight: bold; border-radius: 6px;"
         )

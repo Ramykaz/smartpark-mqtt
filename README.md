@@ -67,7 +67,7 @@ python -m unittest discover tests/
 ``` bash
 which python      # should  point to .venv/bin/python
 
-python -m experiments.experiment_controller --qos 1 --n-slots 5 --duration 60
+python -m experiments.experiment_controller --qos 1 --n-slots 10 --duration 60
 
 python -m sensors.sensor_node
 

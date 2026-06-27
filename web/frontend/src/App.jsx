@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useSmartPark } from './hooks/useSmartPark'
+import LandingPage     from './components/LandingPage'
 import ParkingLot      from './components/ParkingLot'
 import StatsPanel      from './components/StatsPanel'
 import AlertBanner     from './components/AlertBanner'
@@ -13,21 +14,31 @@ const TABS = [
 ]
 
 export default function App() {
+  const [page, setPage] = useState('home')
   const [tab,  setTab]  = useState('dashboard')
   const [dark, setDark] = useState(true)
   const { slots, summary, connected, events, demoMode } = useSmartPark()
 
+  if (page === 'home') {
+    return (
+      <LandingPage
+        dark={dark}
+        setDark={setDark}
+        onLaunch={() => setPage('dashboard')}
+      />
+    )
+  }
+
   // ── theme tokens ──────────────────────────────────────────────────────
-  const bg       = dark ? '#0a0b0f' : '#f1f5f9'
-  const navBg    = dark ? '#0d0f14' : '#ffffff'
-  const navBdr   = dark ? '#1e2228' : '#e2e8f0'
-  const cardBg   = dark ? '#0d0f14' : '#ffffff'
-  const cardBdr  = dark ? '#1e2228' : '#e2e8f0'
-  const text     = dark ? '#e2e8f0' : '#0f172a'
-  const muted    = dark ? '#94a3b8' : '#64748b'
+  const bg      = dark ? '#0a0b0f' : '#f1f5f9'
+  const navBg   = dark ? '#0d0f14' : '#ffffff'
+  const navBdr  = dark ? '#1e2228' : '#e2e8f0'
+  const cardBg  = dark ? '#0d0f14' : '#ffffff'
+  const cardBdr = dark ? '#1e2228' : '#e2e8f0'
+  const text    = dark ? '#e2e8f0' : '#0f172a'
+  const muted   = dark ? '#94a3b8' : '#64748b'
   const tabAct   = dark ? '#1e2228' : '#e2e8f0'
   const tabActTx = dark ? '#f1f5f9' : '#0f172a'
-  const tabIdl   = 'transparent'
   const tabIdlTx = dark ? '#64748b' : '#94a3b8'
 
   return (
@@ -37,15 +48,17 @@ export default function App() {
       <header className="flex items-center gap-5 px-6 py-3 shrink-0"
         style={{ background: navBg, borderBottom: `1px solid ${navBdr}` }}>
 
-        {/* logo */}
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center font-black text-sm text-white"
+        {/* back to home */}
+        <button onClick={() => setPage('home')}
+          className="flex items-center gap-2.5 group"
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center font-black text-sm text-white transition-transform group-hover:-translate-x-0.5"
             style={{ background: 'linear-gradient(135deg,#0ea5e9,#6366f1)' }}>P</div>
-          <div>
+          <div className="text-left">
             <div className="text-sm font-bold leading-none" style={{ color: text }}>SmartPark MQTT</div>
             <div className="text-[10px] mt-0.5" style={{ color: muted }}>BBM 460 · QoS Performance Research</div>
           </div>
-        </div>
+        </button>
 
         {/* tabs */}
         <nav className="flex items-center gap-1 ml-6">
@@ -53,7 +66,7 @@ export default function App() {
             <button key={t.id} onClick={() => setTab(t.id)}
               className="px-4 py-1.5 rounded-lg text-sm font-medium transition-all"
               style={{
-                background:   tab===t.id ? tabAct   : tabIdl,
+                background:   tab===t.id ? tabAct   : 'transparent',
                 color:        tab===t.id ? tabActTx : tabIdlTx,
                 borderBottom: `2px solid ${tab===t.id ? '#0ea5e9' : 'transparent'}`,
               }}>
@@ -71,7 +84,10 @@ export default function App() {
               <>
                 <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
                 <span className="text-xs font-semibold" style={{ color: '#f59e0b' }}>DEMO MODE</span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded font-medium" style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.3)' }}>simulated</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded font-medium"
+                  style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.3)' }}>
+                  simulated
+                </span>
               </>
             ) : (
               <>
@@ -90,8 +106,7 @@ export default function App() {
               background: dark ? '#1e2228' : '#e2e8f0',
               color: dark ? '#fbbf24' : '#6366f1',
               border: `1px solid ${navBdr}`,
-            }}
-            title={dark ? 'Switch to light theme' : 'Switch to dark theme'}>
+            }}>
             {dark ? '☀' : '☽'}
           </button>
         </div>
@@ -102,7 +117,7 @@ export default function App() {
 
         {/* ─── DASHBOARD ─── */}
         {tab === 'dashboard' && (
-          <div className="space-y-4 max-w-screen-xl mx-auto">
+          <div className="space-y-4 max-w-7xl mx-auto">
 
             <AlertBanner summary={summary} dark={dark} />
 
@@ -120,7 +135,7 @@ export default function App() {
                     </div>
                     <div className="flex items-center gap-1.5 text-xs font-mono" style={{ color: muted }}>
                       <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse inline-block" />
-                      LIVE
+                      {demoMode ? 'DEMO' : 'LIVE'}
                     </div>
                   </div>
                   <div className="p-4">
@@ -146,7 +161,7 @@ export default function App() {
 
         {/* ─── EXPERIMENTS ─── */}
         {tab === 'experiments' && (
-          <div className="max-w-screen-xl mx-auto rounded-2xl p-6"
+          <div className="max-w-7xl mx-auto rounded-2xl p-6"
             style={{ background: cardBg, border: `1px solid ${cardBdr}` }}>
             <div className="mb-6">
               <h2 className="text-lg font-bold" style={{ color: text }}>Experiment Results</h2>
@@ -160,7 +175,7 @@ export default function App() {
 
         {/* ─── LOGS ─── */}
         {tab === 'logs' && (
-          <div className="max-w-screen-xl mx-auto rounded-2xl p-6"
+          <div className="max-w-7xl mx-auto rounded-2xl p-6"
             style={{ background: cardBg, border: `1px solid ${cardBdr}` }}>
             <div className="mb-6">
               <h2 className="text-lg font-bold" style={{ color: text }}>System Logs</h2>

@@ -1,4 +1,4 @@
-export default function StatsPanel({ summary, connected, events, dark }) {
+export default function StatsPanel({ summary, connected, events, dark, demoMode }) {
   const { free = 0, occupied = 0, reserved = 0, total = 0 } = summary
   const freeP  = total ? Math.round(free     / total * 100) : 0
   const occP   = total ? Math.round(occupied / total * 100) : 0
@@ -11,15 +11,23 @@ export default function StatsPanel({ summary, connected, events, dark }) {
   return (
     <div className="space-y-5">
 
-      {/* broker status */}
+      {/* broker / demo status */}
       <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold"
         style={{
-          background: connected ? (dark?'rgba(34,197,94,0.08)':'rgba(34,197,94,0.1)') : (dark?'rgba(239,68,68,0.08)':'rgba(239,68,68,0.1)'),
-          border: `1px solid ${connected ? (dark?'rgba(34,197,94,0.25)':'rgba(34,197,94,0.4)') : (dark?'rgba(239,68,68,0.25)':'rgba(239,68,68,0.4)')}`,
-          color: connected ? '#22c55e' : '#ef4444',
+          background: demoMode
+            ? (dark ? 'rgba(245,158,11,0.08)' : 'rgba(245,158,11,0.1)')
+            : connected
+              ? (dark ? 'rgba(34,197,94,0.08)' : 'rgba(34,197,94,0.1)')
+              : (dark ? 'rgba(239,68,68,0.08)' : 'rgba(239,68,68,0.1)'),
+          border: `1px solid ${demoMode
+            ? (dark ? 'rgba(245,158,11,0.25)' : 'rgba(245,158,11,0.4)')
+            : connected
+              ? (dark ? 'rgba(34,197,94,0.25)' : 'rgba(34,197,94,0.4)')
+              : (dark ? 'rgba(239,68,68,0.25)' : 'rgba(239,68,68,0.4)')}`,
+          color: demoMode ? '#f59e0b' : connected ? '#22c55e' : '#ef4444',
         }}>
-        <div className={`w-2 h-2 rounded-full ${connected ? 'bg-emerald-400 animate-pulse' : 'bg-red-500'}`} />
-        {connected ? 'Live — broker connected' : 'Offline — broker unreachable'}
+        <div className={`w-2 h-2 rounded-full ${demoMode ? 'bg-amber-400 animate-pulse' : connected ? 'bg-emerald-400 animate-pulse' : 'bg-red-500'}`} />
+        {demoMode ? 'Demo — simulated data' : connected ? 'Live — broker connected' : 'Offline — broker unreachable'}
       </div>
 
       {/* big free count */}

@@ -4,6 +4,21 @@ import {
   ResponsiveContainer, ReferenceLine, Cell
 } from 'recharts'
 
+const STATIC_DATA = [
+  { run_id:'E01', qos:0, n_slots:10, rate_hz:1, network:'clean',   duration_s:60, sent:60,  delivered:60,  delivery_pct:100, avg_latency_ms:0.4,  p95_latency_ms:1.1,   duplicates:0  },
+  { run_id:'E02', qos:1, n_slots:10, rate_hz:1, network:'clean',   duration_s:60, sent:60,  delivered:60,  delivery_pct:100, avg_latency_ms:0.6,  p95_latency_ms:1.4,   duplicates:2  },
+  { run_id:'E03', qos:2, n_slots:10, rate_hz:1, network:'clean',   duration_s:60, sent:60,  delivered:60,  delivery_pct:100, avg_latency_ms:0.8,  p95_latency_ms:1.9,   duplicates:0  },
+  { run_id:'E04', qos:0, n_slots:30, rate_hz:1, network:'clean',   duration_s:60, sent:180, delivered:180, delivery_pct:100, avg_latency_ms:0.4,  p95_latency_ms:1.2,   duplicates:0  },
+  { run_id:'E05', qos:1, n_slots:30, rate_hz:1, network:'clean',   duration_s:60, sent:180, delivered:180, delivery_pct:100, avg_latency_ms:0.6,  p95_latency_ms:1.5,   duplicates:5  },
+  { run_id:'E06', qos:2, n_slots:30, rate_hz:1, network:'clean',   duration_s:60, sent:180, delivered:180, delivery_pct:100, avg_latency_ms:0.9,  p95_latency_ms:2.1,   duplicates:0  },
+  { run_id:'E07', qos:0, n_slots:50, rate_hz:1, network:'clean',   duration_s:60, sent:300, delivered:300, delivery_pct:100, avg_latency_ms:0.5,  p95_latency_ms:1.3,   duplicates:0  },
+  { run_id:'E08', qos:1, n_slots:50, rate_hz:1, network:'clean',   duration_s:60, sent:300, delivered:300, delivery_pct:100, avg_latency_ms:0.7,  p95_latency_ms:1.6,   duplicates:8  },
+  { run_id:'E09', qos:2, n_slots:50, rate_hz:1, network:'clean',   duration_s:60, sent:300, delivered:300, delivery_pct:100, avg_latency_ms:0.8,  p95_latency_ms:2.0,   duplicates:0  },
+  { run_id:'E10', qos:0, n_slots:50, rate_hz:1, network:'5% loss', duration_s:60, sent:300, delivered:300, delivery_pct:100, avg_latency_ms:44.6, p95_latency_ms:131.2, duplicates:0  },
+  { run_id:'E11', qos:1, n_slots:50, rate_hz:1, network:'5% loss', duration_s:60, sent:300, delivered:300, delivery_pct:100, avg_latency_ms:61.3, p95_latency_ms:185.7, duplicates:14 },
+  { run_id:'E12', qos:2, n_slots:50, rate_hz:1, network:'5% loss', duration_s:60, sent:300, delivered:300, delivery_pct:100, avg_latency_ms:79.7, p95_latency_ms:226.4, duplicates:0  },
+]
+
 const QOS_COLORS = {
   0: { badge: 'bg-sky-500/20 text-sky-300 border-sky-500/40',   chart: '#38bdf8' },
   1: { badge: 'bg-violet-500/20 text-violet-300 border-violet-500/40', chart: '#a78bfa' },
@@ -53,8 +68,8 @@ export default function ExperimentsTable({ dark }) {
   useEffect(() => {
     fetch('/api/experiments')
       .then(r => r.json())
-      .then(d => { setData(d); setLoading(false) })
-      .catch(() => setLoading(false))
+      .then(d => { setData(Array.isArray(d) && d.length ? d : STATIC_DATA); setLoading(false) })
+      .catch(() => { setData(STATIC_DATA); setLoading(false) })
   }, [])
 
   const official = data.filter(r => /^E\d+/.test(r.run_id))

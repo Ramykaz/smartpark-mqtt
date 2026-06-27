@@ -15,7 +15,7 @@ const TABS = [
 export default function App() {
   const [tab,  setTab]  = useState('dashboard')
   const [dark, setDark] = useState(true)
-  const { slots, summary, connected, events } = useSmartPark()
+  const { slots, summary, connected, events, demoMode } = useSmartPark()
 
   // ── theme tokens ──────────────────────────────────────────────────────
   const bg       = dark ? '#0a0b0f' : '#f1f5f9'
@@ -65,12 +65,22 @@ export default function App() {
         {/* right side */}
         <div className="ml-auto flex items-center gap-4">
 
-          {/* broker status */}
+          {/* broker / demo status */}
           <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${connected ? 'bg-emerald-400 animate-pulse' : 'bg-red-500'}`} />
-            <span className="text-xs font-semibold" style={{ color: connected ? '#22c55e' : '#ef4444' }}>
-              {connected ? 'BROKER CONNECTED' : 'BROKER OFFLINE'}
-            </span>
+            {demoMode ? (
+              <>
+                <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                <span className="text-xs font-semibold" style={{ color: '#f59e0b' }}>DEMO MODE</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded font-medium" style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.3)' }}>simulated</span>
+              </>
+            ) : (
+              <>
+                <div className={`w-2 h-2 rounded-full ${connected ? 'bg-emerald-400 animate-pulse' : 'bg-red-500'}`} />
+                <span className="text-xs font-semibold" style={{ color: connected ? '#22c55e' : '#ef4444' }}>
+                  {connected ? 'BROKER CONNECTED' : 'BROKER OFFLINE'}
+                </span>
+              </>
+            )}
           </div>
 
           {/* theme toggle */}
@@ -126,7 +136,7 @@ export default function App() {
                   <h2 className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: muted }}>
                     System Status
                   </h2>
-                  <StatsPanel summary={summary} connected={connected} events={events} dark={dark} />
+                  <StatsPanel summary={summary} connected={connected} events={events} dark={dark} demoMode={demoMode} />
                 </div>
               </div>
 

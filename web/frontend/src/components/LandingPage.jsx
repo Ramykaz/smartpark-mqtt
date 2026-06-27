@@ -1,98 +1,65 @@
-const S = {
-  // layout
-  page:    (dark) => ({ background: dark ? '#0c0e12' : '#f4f6f9', color: dark ? '#c9d1dc' : '#1a202c', minHeight: '100vh', fontFamily: 'inherit' }),
-  nav:     (dark) => ({ display: 'flex', alignItems: 'center', padding: '0 40px', height: 52, borderBottom: `1px solid ${dark ? '#1e2330' : '#dde1e8'}`, background: dark ? '#0c0e12' : '#f4f6f9' }),
-  divider: (dark) => ({ borderTop: `1px solid ${dark ? '#1e2330' : '#dde1e8'}`, margin: '0 40px' }),
-  section: { padding: '56px 40px', maxWidth: 1040, margin: '0 auto' },
-
-  // text
-  label:   (dark) => ({ fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: dark ? '#4a5568' : '#718096' }),
-  h1:      (dark) => ({ fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 800, lineHeight: 1.1, letterSpacing: '-0.02em', margin: '12px 0 20px', color: dark ? '#e2e8f0' : '#0f172a' }),
-  h2:      (dark) => ({ fontSize: 18, fontWeight: 700, margin: '0 0 8px', color: dark ? '#e2e8f0' : '#0f172a' }),
-  body:    (dark) => ({ fontSize: 15, lineHeight: 1.7, color: dark ? '#8896a8' : '#4a5568', maxWidth: 480 }),
-  mono:    (dark) => ({ fontFamily: 'monospace', fontSize: 13, color: dark ? '#8896a8' : '#4a5568' }),
-  accent:  { color: '#0ea5e9' },
-  muted:   (dark) => ({ color: dark ? '#4a5568' : '#9ca3af' }),
-
-  // components
-  btn:     (dark) => ({ padding: '9px 20px', fontSize: 13, fontWeight: 600, borderRadius: 6, cursor: 'pointer', border: `1px solid ${dark ? '#2a3244' : '#c5ccd8'}`, background: dark ? '#161b26' : '#edf0f5', color: dark ? '#c9d1dc' : '#374151' }),
-  btnPrim: { padding: '9px 20px', fontSize: 13, fontWeight: 600, borderRadius: 6, cursor: 'pointer', border: '1px solid #0ea5e9', background: '#0ea5e9', color: '#fff' },
-  card:    (dark) => ({ background: dark ? '#10131a' : '#fff', border: `1px solid ${dark ? '#1e2330' : '#dde1e8'}`, borderRadius: 8, padding: '20px 24px' }),
-  tag:     (dark) => ({ display: 'inline-block', fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 4, border: `1px solid ${dark ? '#2a3244' : '#c5ccd8'}`, color: dark ? '#4a5568' : '#718096', marginRight: 6 }),
-}
-
-const QOS = [
-  { level: 0, guarantee: 'At-most-once',  latency: '44.6', p95: '131',  dupes: 0  },
-  { level: 1, guarantee: 'At-least-once', latency: '61.3', p95: '186',  dupes: 14 },
-  { level: 2, guarantee: 'Exactly-once',  latency: '79.7', p95: '226',  dupes: 0  },
-]
-
-const ARCH = [
-  { name: 'Sensor Nodes',  sub: 'publish at 1 Hz' },
-  { name: 'Broker :1883',  sub: 'Mosquitto MQTT'  },
-  { name: 'FastAPI :8000', sub: 'MQTT subscriber'  },
-  { name: 'WebSocket',     sub: 'push to browser'  },
-  { name: 'React UI',      sub: 'live dashboard'   },
-]
-
-const STACK = ['Python 3.11', 'Paho MQTT', 'Mosquitto', 'FastAPI', 'React 19', 'WebSocket', 'Recharts', 'SQLite', 'Vite 8']
+const STACK = ['Python 3.11', 'Paho MQTT', 'Mosquitto', 'FastAPI', 'React 19', 'WebSocket', 'SQLite', 'Vite 8']
 
 export default function LandingPage({ dark, setDark, onLaunch }) {
-  const bdr = dark ? '#1e2330' : '#dde1e8'
-  const txt = dark ? '#c9d1dc' : '#1a202c'
-  const mut = dark ? '#4a5568' : '#9ca3af'
+  const bg  = dark ? '#0f1117' : '#f6f8fa'
+  const sf  = dark ? '#161b22' : '#ffffff'
+  const bdr = dark ? '#21262d' : '#d0d7de'
+  const txt = dark ? '#c9d1d9' : '#1f2328'
+  const mut = dark ? '#8b949e' : '#636c76'
+
+  const btn  = { padding: '7px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', border: `1px solid ${bdr}`, background: sf, color: txt, borderRadius: 4 }
+  const btnP = { padding: '7px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', border: '1px solid #388bfd', background: '#388bfd', color: '#fff', borderRadius: 4 }
+  const lbl  = { fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: mut }
 
   return (
-    <div style={S.page(dark)}>
+    <div style={{ background: bg, color: txt, minHeight: '100vh', fontFamily: 'inherit' }}>
 
       {/* nav */}
-      <nav style={S.nav(dark)}>
-        <span style={{ fontSize: 14, fontWeight: 700, color: txt, letterSpacing: '-0.01em' }}>SmartPark MQTT</span>
-        <span style={{ ...S.mono(dark), marginLeft: 12, fontSize: 11 }}>BBM 460</span>
+      <nav style={{ height: 44, display: 'flex', alignItems: 'center', padding: '0 32px', borderBottom: `1px solid ${bdr}`, background: sf }}>
+        <span style={{ fontSize: 13, fontWeight: 700, color: txt }}>SmartPark MQTT</span>
+        <span style={{ marginLeft: 10, fontSize: 11, fontFamily: 'monospace', color: mut }}>BBM 460</span>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
-          <button onClick={() => setDark(d => !d)} style={{ ...S.btn(dark), padding: '5px 10px', fontSize: 12 }}>
-            {dark ? 'Light' : 'Dark'}
-          </button>
+          <button onClick={() => setDark(d => !d)} style={btn}>{dark ? 'Light' : 'Dark'}</button>
           <a href="https://github.com/Ramykaz/smartpark-mqtt" target="_blank" rel="noopener noreferrer"
-            style={{ ...S.btn(dark), textDecoration: 'none', display: 'inline-block' }}>
-            GitHub
-          </a>
-          <button onClick={onLaunch} style={S.btnPrim}>Dashboard →</button>
+            style={{ ...btn, textDecoration: 'none' }}>GitHub</a>
+          <button onClick={onLaunch} style={btnP}>Dashboard</button>
         </div>
       </nav>
 
       {/* hero */}
-      <div style={{ ...S.section, paddingTop: 72, paddingBottom: 64, display: 'grid', gridTemplateColumns: '1fr 320px', gap: 56, alignItems: 'start' }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '80px 32px 72px', display: 'grid', gridTemplateColumns: '1fr 300px', gap: 56, alignItems: 'start' }}>
         <div>
-          <span style={S.label(dark)}>Research Project · BBM 460 · 2025</span>
-          <h1 style={S.h1(dark)}>SmartPark<br />MQTT</h1>
-          <p style={S.body(dark)}>
+          <span style={lbl}>Research Project · BBM 460 · 2025</span>
+          <h1 style={{ fontSize: 'clamp(28px, 4vw, 46px)', fontWeight: 700, margin: '14px 0 18px', letterSpacing: '-0.02em', lineHeight: 1.15, color: txt }}>
+            SmartPark MQTT
+          </h1>
+          <p style={{ fontSize: 14, lineHeight: 1.75, color: mut, maxWidth: 480, margin: '0 0 32px' }}>
             An IoT parking management system built on MQTT. Measures message delivery
-            and latency across QoS levels 0, 1, and 2 — on both clean and 5% packet-loss
-            networks — using 12 controlled experiments across 10, 30, and 50-slot lots.
+            and latency across QoS levels 0, 1, and 2 on clean and 5% packet-loss
+            networks using 12 controlled experiments across 10, 30, and 50-slot lots.
           </p>
-          <div style={{ display: 'flex', gap: 8, marginTop: 28 }}>
-            <button onClick={onLaunch} style={S.btnPrim}>Open Dashboard</button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={onLaunch} style={btnP}>Open Dashboard</button>
             <a href="https://github.com/Ramykaz/smartpark-mqtt" target="_blank" rel="noopener noreferrer"
-              style={{ ...S.btn(dark), textDecoration: 'none', display: 'inline-block' }}>
-              GitHub →
-            </a>
+              style={{ ...btn, textDecoration: 'none' }}>GitHub →</a>
           </div>
         </div>
 
-        {/* summary card */}
-        <div style={S.card(dark)}>
-          <p style={{ ...S.label(dark), marginBottom: 16 }}>Experiment Summary</p>
+        {/* summary */}
+        <div style={{ background: sf, border: `1px solid ${bdr}` }}>
+          <div style={{ padding: '10px 16px', borderBottom: `1px solid ${bdr}`, ...lbl }}>
+            Experiment Summary
+          </div>
           {[
-            ['Experiments run',    '12'],
-            ['QoS levels tested',  '0 / 1 / 2'],
-            ['Delivery rate',      '100%'],
-            ['Best latency',       '0.4 ms'],
-            ['Worst P95',          '226 ms'],
-            ['Slot sizes',         '10 · 30 · 50'],
-            ['Network conditions', 'clean + 5% loss'],
-          ].map(([k, v]) => (
-            <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: `1px solid ${bdr}` }}>
+            ['Experiments',         '12 runs'],
+            ['QoS levels',          '0 / 1 / 2'],
+            ['Delivery rate',       '100%'],
+            ['Best latency',        '0.4 ms'],
+            ['Worst P95',           '226 ms'],
+            ['Slot configurations', '10 · 30 · 50'],
+            ['Networks',            'clean + 5% loss'],
+          ].map(([k, v], i, arr) => (
+            <div key={k} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 16px', borderBottom: i < arr.length - 1 ? `1px solid ${bdr}` : 'none' }}>
               <span style={{ fontSize: 13, color: mut }}>{k}</span>
               <span style={{ fontSize: 13, fontWeight: 600, fontFamily: 'monospace', color: txt }}>{v}</span>
             </div>
@@ -100,95 +67,60 @@ export default function LandingPage({ dark, setDark, onLaunch }) {
         </div>
       </div>
 
-      <div style={S.divider(dark)} />
-
-      {/* architecture */}
-      <div style={S.section}>
-        <p style={{ ...S.label(dark), marginBottom: 24 }}>System Architecture</p>
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 0, overflowX: 'auto', paddingBottom: 8 }}>
-          {ARCH.map((node, i) => (
-            <div key={node.name} style={{ display: 'flex', alignItems: 'center' }}>
-              <div style={{ textAlign: 'center', minWidth: 120 }}>
-                <div style={{ ...S.card(dark), display: 'inline-block', padding: '8px 14px', textAlign: 'center' }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: txt }}>{node.name}</div>
-                </div>
-                <div style={{ fontSize: 11, color: mut, marginTop: 6 }}>{node.sub}</div>
-              </div>
-              {i < ARCH.length - 1 && (
-                <div style={{ fontSize: 13, color: mut, margin: '0 4px', paddingBottom: 18, whiteSpace: 'nowrap' }}>
-                  {i === 0 ? ' — MQTT → ' : i === 2 ? ' — WS → ' : ' → '}
-                </div>
-              )}
-            </div>
-          ))}
+      {/* QoS table */}
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 32px 72px' }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 16, marginBottom: 14 }}>
+          <span style={lbl}>QoS Comparison</span>
+          <span style={{ fontSize: 12, fontFamily: 'monospace', color: mut }}>50-slot lot · 1 Hz · 60 s · 5% packet loss</span>
         </div>
-      </div>
-
-      <div style={S.divider(dark)} />
-
-      {/* qos table */}
-      <div style={S.section}>
-        <p style={{ ...S.label(dark), marginBottom: 6 }}>QoS Comparison</p>
-        <p style={{ ...S.mono(dark), marginBottom: 24 }}>50-slot lot · 1 Hz · 60 s · 5% packet loss (tc-netem)</p>
-        <div style={{ overflowX: 'auto' }}>
+        <div style={{ border: `1px solid ${bdr}`, overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
-              <tr>
-                {['', 'QoS 0', 'QoS 1', 'QoS 2'].map(h => (
-                  <th key={h} style={{
-                    padding: '8px 16px', textAlign: h === '' ? 'left' : 'center',
-                    color: mut, fontWeight: 600, fontSize: 12, letterSpacing: '0.05em',
-                    borderBottom: `1px solid ${bdr}`, textTransform: 'uppercase',
-                  }}>{h}</th>
+              <tr style={{ background: sf }}>
+                {['', 'QoS 0', 'QoS 1', 'QoS 2'].map((h, i) => (
+                  <th key={h} style={{ padding: '10px 16px', textAlign: i === 0 ? 'left' : 'center', fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: mut, borderBottom: `1px solid ${bdr}` }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {[
-                { label: 'Guarantee',     vals: QOS.map(q => q.guarantee) },
-                { label: 'Avg latency',   vals: QOS.map(q => `${q.latency} ms`), hi: true },
-                { label: 'P95 latency',   vals: QOS.map(q => `${q.p95} ms`) },
-                { label: 'Duplicates',    vals: QOS.map(q => String(q.dupes)) },
+                { label: 'Guarantee',     vals: ['At-most-once', 'At-least-once', 'Exactly-once'] },
+                { label: 'Avg latency',   vals: ['44.6 ms', '61.3 ms', '79.7 ms'], accent: true },
+                { label: 'P95 latency',   vals: ['131 ms', '186 ms', '226 ms'] },
+                { label: 'Duplicates',    vals: ['0', '14', '0'] },
                 { label: 'Delivery rate', vals: ['100%', '100%', '100%'] },
-              ].map(row => (
-                <tr key={row.label} style={{ borderBottom: `1px solid ${dark ? '#161b26' : '#f0f2f5'}` }}>
-                  <td style={{ padding: '9px 16px', color: mut, fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{row.label}</td>
+              ].map((row, ri, arr) => (
+                <tr key={row.label} style={{ borderBottom: ri < arr.length - 1 ? `1px solid ${bdr}` : 'none' }}>
+                  <td style={{ padding: '9px 16px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: mut }}>{row.label}</td>
                   {row.vals.map((v, i) => (
-                    <td key={i} style={{
-                      padding: '9px 16px', textAlign: 'center', fontFamily: 'monospace',
-                      color: row.hi && i === 0 ? '#0ea5e9' : txt,
-                      fontWeight: row.hi ? 600 : 400,
-                    }}>{v}</td>
+                    <td key={i} style={{ padding: '9px 16px', textAlign: 'center', fontFamily: 'monospace', color: row.accent && i === 0 ? '#388bfd' : txt, fontWeight: row.accent ? 600 : 400 }}>{v}</td>
                   ))}
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        <p style={{ ...S.mono(dark), marginTop: 16, fontSize: 11 }}>
-          Key result: QoS 2 is 1.8× slower than QoS 0 under packet loss — all three levels achieved 100% delivery.
+        <p style={{ marginTop: 10, fontSize: 12, fontFamily: 'monospace', color: mut }}>
+          QoS 2 is 1.8× slower than QoS 0 under packet loss. All three levels achieved 100% delivery.
         </p>
       </div>
 
-      <div style={S.divider(dark)} />
-
-      {/* stack + cta */}
-      <div style={{ ...S.section, display: 'grid', gridTemplateColumns: '1fr auto', gap: 40, alignItems: 'center', paddingTop: 40, paddingBottom: 48 }}>
+      {/* stack + CTA */}
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 32px 72px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 32 }}>
         <div>
-          <p style={{ ...S.label(dark), marginBottom: 12 }}>Stack</p>
-          <p style={{ fontSize: 14, color: mut, lineHeight: 1.8 }}>
+          <span style={lbl}>Stack</span>
+          <p style={{ marginTop: 10, fontSize: 13, color: mut, lineHeight: 1.9 }}>
             {STACK.join('  ·  ')}
           </p>
         </div>
-        <button onClick={onLaunch} style={{ ...S.btnPrim, padding: '10px 24px', fontSize: 14, whiteSpace: 'nowrap' }}>
+        <button onClick={onLaunch} style={{ ...btnP, padding: '10px 24px', fontSize: 14, whiteSpace: 'nowrap' }}>
           Open Dashboard →
         </button>
       </div>
 
       {/* footer */}
-      <div style={{ ...S.divider(dark) }} />
-      <div style={{ padding: '20px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ ...S.mono(dark), fontSize: 12 }}>SmartPark MQTT — BBM 460</span>
+      <div style={{ borderTop: `1px solid ${bdr}`, padding: '14px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontSize: 12, fontFamily: 'monospace', color: mut }}>SmartPark MQTT — BBM 460</span>
         <a href="https://github.com/Ramykaz/smartpark-mqtt" target="_blank" rel="noopener noreferrer"
           style={{ fontSize: 12, color: mut, textDecoration: 'none' }}>
           github.com/Ramykaz/smartpark-mqtt

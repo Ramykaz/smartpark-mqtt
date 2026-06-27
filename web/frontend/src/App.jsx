@@ -1,191 +1,132 @@
 import { useState } from 'react'
-import { useSmartPark } from './hooks/useSmartPark'
-import LandingPage     from './components/LandingPage'
-import ParkingLot      from './components/ParkingLot'
-import StatsPanel      from './components/StatsPanel'
-import AlertBanner     from './components/AlertBanner'
-import ExperimentsTable from './components/ExperimentsTable'
-import LogViewer       from './components/LogViewer'
+import { useSmartPark }   from './hooks/useSmartPark'
+import LandingPage        from './components/LandingPage'
+import ParkingLot         from './components/ParkingLot'
+import ExperimentsTable   from './components/ExperimentsTable'
+import LogViewer          from './components/LogViewer'
 
 const TABS = [
-  { id: 'dashboard',   label: 'Live Simulation' },
-  { id: 'experiments', label: 'Experiments'     },
-  { id: 'logs',        label: 'Logs'            },
+  { id: 'live',        label: 'Live' },
+  { id: 'experiments', label: 'Experiments' },
+  { id: 'logs',        label: 'Logs' },
 ]
+
+function stateColor(s) {
+  if (s === 'FREE')     return '#3fb950'
+  if (s === 'OCCUPIED') return '#f85149'
+  return '#d29922'
+}
 
 export default function App() {
   const [page, setPage] = useState('home')
-  const [tab,  setTab]  = useState('dashboard')
+  const [tab,  setTab]  = useState('live')
   const [dark, setDark] = useState(true)
   const { slots, summary, connected, events, demoMode } = useSmartPark()
 
-  if (page === 'home') {
-    return (
-      <LandingPage
-        dark={dark}
-        setDark={setDark}
-        onLaunch={() => setPage('dashboard')}
-      />
-    )
-  }
+  const bg  = dark ? '#0f1117' : '#f6f8fa'
+  const bdr = dark ? '#21262d' : '#d0d7de'
+  const txt = dark ? '#c9d1d9' : '#1f2328'
+  const mut = dark ? '#8b949e' : '#636c76'
+  const sf  = dark ? '#161b22' : '#ffffff'
 
-  // ── theme tokens ──────────────────────────────────────────────────────
-  const bg      = dark ? '#0a0b0f' : '#f1f5f9'
-  const navBg   = dark ? '#0d0f14' : '#ffffff'
-  const navBdr  = dark ? '#1e2228' : '#e2e8f0'
-  const cardBg  = dark ? '#0d0f14' : '#ffffff'
-  const cardBdr = dark ? '#1e2228' : '#e2e8f0'
-  const text    = dark ? '#e2e8f0' : '#0f172a'
-  const muted   = dark ? '#94a3b8' : '#64748b'
-  const tabAct   = dark ? '#1e2228' : '#e2e8f0'
-  const tabActTx = dark ? '#f1f5f9' : '#0f172a'
-  const tabIdlTx = dark ? '#64748b' : '#94a3b8'
+  if (page === 'home') return <LandingPage dark={dark} setDark={setDark} onLaunch={() => setPage('dashboard')} />
+
+  const statusText = demoMode ? 'demo' : connected ? 'live' : 'offline'
+  const statusCol  = demoMode ? '#d29922' : connected ? '#3fb950' : '#f85149'
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: bg, color: text }}>
+    <div style={{ background: bg, color: txt, height: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'inherit', overflow: 'hidden' }}>
 
-      {/* ── Navbar ─────────────────────────────────────────────────────── */}
-      <header className="flex items-center gap-5 px-6 py-3 shrink-0"
-        style={{ background: navBg, borderBottom: `1px solid ${navBdr}` }}>
-
-        {/* back to home */}
-        <button onClick={() => setPage('home')}
-          className="flex items-center gap-2.5 group"
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center font-black text-sm text-white transition-transform group-hover:-translate-x-0.5"
-            style={{ background: 'linear-gradient(135deg,#0ea5e9,#6366f1)' }}>P</div>
-          <div className="text-left">
-            <div className="text-sm font-bold leading-none" style={{ color: text }}>SmartPark MQTT</div>
-            <div className="text-[10px] mt-0.5" style={{ color: muted }}>BBM 460 · QoS Performance Research</div>
-          </div>
+      {/* nav — 44px */}
+      <header style={{ height: 44, display: 'flex', alignItems: 'center', borderBottom: `1px solid ${bdr}`, flexShrink: 0, background: sf }}>
+        <button onClick={() => setPage('home')} style={{ padding: '0 16px', height: '100%', fontSize: 13, fontWeight: 600, color: txt, background: 'none', border: 'none', borderRight: `1px solid ${bdr}`, cursor: 'pointer' }}>
+          SmartPark MQTT
         </button>
-
-        {/* tabs */}
-        <nav className="flex items-center gap-1 ml-6">
-          {TABS.map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)}
-              className="px-4 py-1.5 rounded-lg text-sm font-medium transition-all"
-              style={{
-                background:   tab===t.id ? tabAct   : 'transparent',
-                color:        tab===t.id ? tabActTx : tabIdlTx,
-                borderBottom: `2px solid ${tab===t.id ? '#0ea5e9' : 'transparent'}`,
-              }}>
-              {t.label}
-            </button>
-          ))}
-        </nav>
-
-        {/* right side */}
-        <div className="ml-auto flex items-center gap-4">
-
-          {/* broker / demo status */}
-          <div className="flex items-center gap-2">
-            {demoMode ? (
-              <>
-                <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-                <span className="text-xs font-semibold" style={{ color: '#f59e0b' }}>DEMO MODE</span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded font-medium"
-                  style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.3)' }}>
-                  simulated
-                </span>
-              </>
-            ) : (
-              <>
-                <div className={`w-2 h-2 rounded-full ${connected ? 'bg-emerald-400 animate-pulse' : 'bg-red-500'}`} />
-                <span className="text-xs font-semibold" style={{ color: connected ? '#22c55e' : '#ef4444' }}>
-                  {connected ? 'BROKER CONNECTED' : 'BROKER OFFLINE'}
-                </span>
-              </>
-            )}
-          </div>
-
-          {/* theme toggle */}
-          <button onClick={() => setDark(d => !d)}
-            className="w-9 h-9 rounded-xl flex items-center justify-center text-base transition-all"
-            style={{
-              background: dark ? '#1e2228' : '#e2e8f0',
-              color: dark ? '#fbbf24' : '#6366f1',
-              border: `1px solid ${navBdr}`,
-            }}>
-            {dark ? '☀' : '☽'}
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)} style={{
+            padding: '0 16px', height: '100%', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+            color: tab === t.id ? txt : mut, background: 'none', border: 'none',
+            borderBottom: `2px solid ${tab === t.id ? '#388bfd' : 'transparent'}`,
+          }}>{t.label}</button>
+        ))}
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 0 }}>
+          <span style={{ padding: '0 16px', fontSize: 12, color: statusCol, fontFamily: 'monospace', borderLeft: `1px solid ${bdr}`, height: 44, display: 'flex', alignItems: 'center' }}>
+            ● {statusText}
+          </span>
+          <button onClick={() => setDark(d => !d)} style={{ padding: '0 14px', height: 44, fontSize: 12, color: mut, background: 'none', border: 'none', borderLeft: `1px solid ${bdr}`, cursor: 'pointer' }}>
+            {dark ? 'Light' : 'Dark'}
           </button>
         </div>
       </header>
 
-      {/* ── Content ────────────────────────────────────────────────────── */}
-      <main className="flex-1 p-5 overflow-auto">
+      {/* live tab */}
+      {tab === 'live' && (
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
-        {/* ─── DASHBOARD ─── */}
-        {tab === 'dashboard' && (
-          <div className="space-y-4 max-w-7xl mx-auto">
-
-            <AlertBanner summary={summary} dark={dark} />
-
-            <div className="flex gap-5 items-start">
-
-              {/* parking lot card */}
-              <div className="flex-1 min-w-0">
-                <div className="rounded-2xl overflow-hidden"
-                  style={{ background: cardBg, border: `1px solid ${cardBdr}` }}>
-                  <div className="flex items-center justify-between px-5 py-3.5"
-                    style={{ borderBottom: `1px solid ${cardBdr}` }}>
-                    <div>
-                      <h2 className="text-sm font-bold" style={{ color: text }}>Live Parking Simulation</h2>
-                      <p className="text-xs mt-0.5" style={{ color: muted }}>Real-time slot states via MQTT WebSocket</p>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-xs font-mono" style={{ color: muted }}>
-                      <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse inline-block" />
-                      {demoMode ? 'DEMO' : 'LIVE'}
-                    </div>
-                  </div>
-                  <div className="p-4">
-                    <ParkingLot slots={slots} dark={dark} />
-                  </div>
-                </div>
+          {/* stats strip — 40px */}
+          <div style={{ height: 40, display: 'flex', borderBottom: `1px solid ${bdr}`, flexShrink: 0 }}>
+            {[
+              { label: 'FREE',     val: summary.free,     col: '#3fb950' },
+              { label: 'OCCUPIED', val: summary.occupied, col: '#f85149' },
+              { label: 'RESERVED', val: summary.reserved, col: '#d29922' },
+              { label: 'TOTAL',    val: summary.total,    col: txt },
+            ].map((s, i, arr) => (
+              <div key={s.label} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, padding: '0 16px', borderRight: i < arr.length - 1 ? `1px solid ${bdr}` : 'none' }}>
+                <span style={{ fontFamily: 'monospace', fontSize: 18, fontWeight: 700, color: s.col, lineHeight: 1 }}>{s.val}</span>
+                <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: mut }}>{s.label}</span>
               </div>
+            ))}
+          </div>
 
-              {/* stats panel */}
-              <div className="w-64 shrink-0">
-                <div className="rounded-2xl p-5"
-                  style={{ background: cardBg, border: `1px solid ${cardBdr}` }}>
-                  <h2 className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: muted }}>
-                    System Status
-                  </h2>
-                  <StatsPanel summary={summary} connected={connected} events={events} dark={dark} demoMode={demoMode} />
-                </div>
+          {/* parking + events */}
+          <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+            <div style={{ flex: 1, overflow: 'auto', padding: 16 }}>
+              <ParkingLot slots={slots} dark={dark} />
+            </div>
+            <div style={{ width: 208, borderLeft: `1px solid ${bdr}`, overflow: 'auto', flexShrink: 0 }}>
+              <div style={{ padding: '10px 14px 6px', fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: mut, borderBottom: `1px solid ${bdr}` }}>
+                Events
               </div>
-
+              {events.length === 0
+                ? <p style={{ padding: '12px 14px', fontSize: 12, color: mut }}>No events yet</p>
+                : events.map((e, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 8, padding: '4px 14px', fontFamily: 'monospace', fontSize: 11, borderBottom: i === 0 ? `1px solid ${bdr}` : 'none', background: i === 0 ? (dark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)') : 'transparent' }}>
+                    <span style={{ color: mut, flexShrink: 0 }}>{e.ts.slice(0, 8)}</span>
+                    <span style={{ color: txt, flexShrink: 0 }}>{e.slot_id}</span>
+                    <span style={{ color: stateColor(e.state) }}>{e.state.slice(0,3)}</span>
+                  </div>
+                ))
+              }
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* ─── EXPERIMENTS ─── */}
-        {tab === 'experiments' && (
-          <div className="max-w-7xl mx-auto rounded-2xl p-6"
-            style={{ background: cardBg, border: `1px solid ${cardBdr}` }}>
-            <div className="mb-6">
-              <h2 className="text-lg font-bold" style={{ color: text }}>Experiment Results</h2>
-              <p className="text-sm mt-1" style={{ color: muted }}>
-                12 controlled experiments · QoS 0 / 1 / 2 · clean network and 5% packet loss
-              </p>
+      {/* experiments tab */}
+      {tab === 'experiments' && (
+        <div style={{ flex: 1, overflow: 'auto', padding: 24 }}>
+          <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+            <div style={{ marginBottom: 20 }}>
+              <h2 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 4px', color: txt }}>Experiment Results</h2>
+              <p style={{ fontSize: 13, color: mut, margin: 0 }}>12 runs · QoS 0 / 1 / 2 · clean network and 5% packet loss</p>
             </div>
             <ExperimentsTable dark={dark} />
           </div>
-        )}
+        </div>
+      )}
 
-        {/* ─── LOGS ─── */}
-        {tab === 'logs' && (
-          <div className="max-w-7xl mx-auto rounded-2xl p-6"
-            style={{ background: cardBg, border: `1px solid ${cardBdr}` }}>
-            <div className="mb-6">
-              <h2 className="text-lg font-bold" style={{ color: text }}>System Logs</h2>
-              <p className="text-sm mt-1" style={{ color: muted }}>Controller output · experiment runs · error traces</p>
+      {/* logs tab */}
+      {tab === 'logs' && (
+        <div style={{ flex: 1, overflow: 'auto', padding: 24 }}>
+          <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+            <div style={{ marginBottom: 20 }}>
+              <h2 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 4px', color: txt }}>System Logs</h2>
+              <p style={{ fontSize: 13, color: mut, margin: 0 }}>Controller output · experiment runs · error traces</p>
             </div>
             <LogViewer dark={dark} />
           </div>
-        )}
-
-      </main>
+        </div>
+      )}
     </div>
   )
 }

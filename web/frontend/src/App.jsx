@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useSmartPark }   from './hooks/useSmartPark'
+import { useIsMobile }    from './hooks/useIsMobile'
 import LandingPage        from './components/LandingPage'
 import ParkingLot         from './components/ParkingLot'
 import ExperimentsTable   from './components/ExperimentsTable'
@@ -22,6 +23,7 @@ export default function App() {
   const [tab,  setTab]  = useState('live')
   const [dark, setDark] = useState(true)
   const { slots, summary, connected, events, demoMode } = useSmartPark()
+  const mobile = useIsMobile()
 
   const bg  = dark ? '#0f1117' : '#f6f8fa'
   const bdr = dark ? '#21262d' : '#d0d7de'
@@ -38,22 +40,22 @@ export default function App() {
     <div style={{ background: bg, color: txt, height: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'inherit', overflow: 'hidden' }}>
 
       {/* nav — 44px */}
-      <header style={{ height: 44, display: 'flex', alignItems: 'center', borderBottom: `1px solid ${bdr}`, flexShrink: 0, background: sf }}>
-        <button onClick={() => setPage('home')} style={{ padding: '0 16px', height: '100%', fontSize: 13, fontWeight: 600, color: txt, background: 'none', border: 'none', borderRight: `1px solid ${bdr}`, cursor: 'pointer' }}>
-          SmartPark MQTT
+      <header style={{ height: 44, display: 'flex', alignItems: 'center', borderBottom: `1px solid ${bdr}`, flexShrink: 0, background: sf, overflowX: 'auto' }}>
+        <button onClick={() => setPage('home')} style={{ padding: mobile ? '0 10px' : '0 16px', height: '100%', fontSize: 13, fontWeight: 600, color: txt, background: 'none', border: 'none', borderRight: `1px solid ${bdr}`, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
+          {mobile ? 'SmartPark' : 'SmartPark MQTT'}
         </button>
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)} style={{
-            padding: '0 16px', height: '100%', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+            padding: mobile ? '0 10px' : '0 16px', height: '100%', fontSize: 13, fontWeight: 500, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
             color: tab === t.id ? txt : mut, background: 'none', border: 'none',
             borderBottom: `2px solid ${tab === t.id ? '#388bfd' : 'transparent'}`,
           }}>{t.label}</button>
         ))}
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 0 }}>
-          <span style={{ padding: '0 16px', fontSize: 12, color: statusCol, fontFamily: 'monospace', borderLeft: `1px solid ${bdr}`, height: 44, display: 'flex', alignItems: 'center' }}>
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 0, flexShrink: 0 }}>
+          <span style={{ padding: mobile ? '0 10px' : '0 16px', fontSize: 12, color: statusCol, fontFamily: 'monospace', borderLeft: `1px solid ${bdr}`, height: 44, display: 'flex', alignItems: 'center', whiteSpace: 'nowrap' }}>
             ● {statusText}
           </span>
-          <button onClick={() => setDark(d => !d)} style={{ padding: '0 14px', height: 44, fontSize: 12, color: mut, background: 'none', border: 'none', borderLeft: `1px solid ${bdr}`, cursor: 'pointer' }}>
+          <button onClick={() => setDark(d => !d)} style={{ padding: mobile ? '0 10px' : '0 14px', height: 44, fontSize: 12, color: mut, background: 'none', border: 'none', borderLeft: `1px solid ${bdr}`, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
             {dark ? 'Light' : 'Dark'}
           </button>
         </div>
@@ -71,19 +73,19 @@ export default function App() {
               { label: 'RESERVED', val: summary.reserved, col: '#d29922' },
               { label: 'TOTAL',    val: summary.total,    col: txt },
             ].map((s, i, arr) => (
-              <div key={s.label} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, padding: '0 16px', borderRight: i < arr.length - 1 ? `1px solid ${bdr}` : 'none' }}>
-                <span style={{ fontFamily: 'monospace', fontSize: 18, fontWeight: 700, color: s.col, lineHeight: 1 }}>{s.val}</span>
-                <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: mut }}>{s.label}</span>
+              <div key={s.label} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: mobile ? 4 : 8, padding: mobile ? '0 8px' : '0 16px', borderRight: i < arr.length - 1 ? `1px solid ${bdr}` : 'none' }}>
+                <span style={{ fontFamily: 'monospace', fontSize: mobile ? 15 : 18, fontWeight: 700, color: s.col, lineHeight: 1 }}>{s.val}</span>
+                <span style={{ fontSize: mobile ? 9 : 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: mut }}>{s.label}</span>
               </div>
             ))}
           </div>
 
           {/* parking + events */}
-          <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-            <div style={{ flex: 1, overflow: 'auto', padding: 16 }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: mobile ? 'column' : 'row', overflow: mobile ? 'auto' : 'hidden' }}>
+            <div style={{ flex: mobile ? 'none' : 1, overflow: mobile ? 'visible' : 'auto', padding: mobile ? 10 : 16 }}>
               <ParkingLot slots={slots} dark={dark} />
             </div>
-            <div style={{ width: 208, borderLeft: `1px solid ${bdr}`, overflow: 'auto', flexShrink: 0 }}>
+            <div style={{ width: mobile ? '100%' : 208, maxHeight: mobile ? 220 : 'none', borderLeft: mobile ? 'none' : `1px solid ${bdr}`, borderTop: mobile ? `1px solid ${bdr}` : 'none', overflow: 'auto', flexShrink: 0 }}>
               <div style={{ padding: '10px 14px 6px', fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: mut, borderBottom: `1px solid ${bdr}` }}>
                 Events
               </div>
@@ -104,7 +106,7 @@ export default function App() {
 
       {/* experiments tab */}
       {tab === 'experiments' && (
-        <div style={{ flex: 1, overflow: 'auto', padding: 24 }}>
+        <div style={{ flex: 1, overflow: 'auto', padding: mobile ? 14 : 24 }}>
           <div style={{ maxWidth: 1100, margin: '0 auto' }}>
             <div style={{ marginBottom: 20 }}>
               <h2 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 4px', color: txt }}>Experiment Results</h2>
@@ -117,7 +119,7 @@ export default function App() {
 
       {/* logs tab */}
       {tab === 'logs' && (
-        <div style={{ flex: 1, overflow: 'auto', padding: 24 }}>
+        <div style={{ flex: 1, overflow: 'auto', padding: mobile ? 14 : 24 }}>
           <div style={{ maxWidth: 1100, margin: '0 auto' }}>
             <div style={{ marginBottom: 20 }}>
               <h2 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 4px', color: txt }}>System Logs</h2>

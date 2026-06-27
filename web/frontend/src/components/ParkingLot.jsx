@@ -1,4 +1,11 @@
-const SPACES_PER_ROW = (total) => {
+import { useIsMobile } from '../hooks/useIsMobile'
+
+const SPACES_PER_ROW = (total, mobile) => {
+  if (mobile) {
+    if (total <= 10) return 3
+    if (total <= 20) return 4
+    return 5
+  }
   if (total <= 10) return 5
   if (total <= 20) return 5
   if (total <= 30) return 6
@@ -41,7 +48,7 @@ function Car({ state, dark }) {
   )
 }
 
-function ParkingSpace({ slot_id, state, dark }) {
+function ParkingSpace({ slot_id, state, dark, mobile }) {
   const num = slot_id.replace(/[^0-9]/g, '') || slot_id
 
   // dark theme colours
@@ -65,7 +72,7 @@ function ParkingSpace({ slot_id, state, dark }) {
     <div
       className="relative flex flex-col items-center justify-between"
       style={{
-        minHeight: '88px',
+        minHeight: mobile ? '64px' : '88px',
         background: c.bg,
         borderLeft:   `1px solid ${c.border}`,
         borderRight:  `1px solid ${c.border}`,
@@ -122,6 +129,7 @@ function Lane({ dark }) {
 }
 
 export default function ParkingLot({ slots, dark }) {
+  const mobile = useIsMobile()
   const entries = Object.entries(slots).sort(([a], [b]) =>
     a.localeCompare(b, undefined, { numeric: true })
   )
@@ -152,7 +160,7 @@ export default function ParkingLot({ slots, dark }) {
     )
   }
 
-  const perRow = SPACES_PER_ROW(entries.length)
+  const perRow = SPACES_PER_ROW(entries.length, mobile)
   const rows = []
   for (let i = 0; i < entries.length; i += perRow) rows.push(entries.slice(i, i + perRow))
 
@@ -187,10 +195,10 @@ export default function ParkingLot({ slots, dark }) {
               <div key={`row-${i}`} className="grid"
                 style={{ gridTemplateColumns: `repeat(${perRow}, minmax(0, 1fr))` }}>
                 {s.data.map(([slot_id, state]) => (
-                  <ParkingSpace key={slot_id} slot_id={slot_id} state={state} dark={dark} />
+                  <ParkingSpace key={slot_id} slot_id={slot_id} state={state} dark={dark} mobile={mobile} />
                 ))}
                 {Array.from({ length: perRow - s.data.length }).map((_, j) => (
-                  <div key={`empty-${j}`} style={{ minHeight: '88px', background: outerBg }} />
+                  <div key={`empty-${j}`} style={{ minHeight: mobile ? '64px' : '88px', background: outerBg }} />
                 ))}
               </div>
             )

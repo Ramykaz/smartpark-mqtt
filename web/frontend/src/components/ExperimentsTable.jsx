@@ -152,7 +152,7 @@ export default function ExperimentsTable({ dark }) {
       </div>
 
       {/* ── KEY FINDINGS CARDS ── */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <FindingCard color="#22c55e" label="Delivery Rate" value="100%" sub="All QoS · all conditions" dark={dark} />
         <FindingCard color="#38bdf8" label="Clean Network" value="< 1 ms" sub="Avg latency, all QoS levels" dark={dark} />
         <FindingCard color="#fb7185" label="QoS 2 under 5% loss" value="1.8×" sub="Slower than QoS 0 (79.7 vs 44.6 ms)" dark={dark} />
@@ -163,7 +163,7 @@ export default function ExperimentsTable({ dark }) {
         <div className="space-y-6">
 
           {/* row 1: two charts */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
             {/* Latency under loss */}
             <ChartCard title="Avg Latency Under 5% Packet Loss" sub="E10 / E11 / E12 · 50 slots · 1 Hz" dark={dark}>

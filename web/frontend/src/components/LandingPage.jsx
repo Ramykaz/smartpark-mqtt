@@ -1,11 +1,15 @@
+import { useIsMobile } from '../hooks/useIsMobile'
+
 const STACK = ['Python 3.11', 'Paho MQTT', 'Mosquitto', 'FastAPI', 'React 19', 'WebSocket', 'SQLite', 'Vite 8']
 
 export default function LandingPage({ dark, setDark, onLaunch }) {
+  const mobile = useIsMobile()
   const bg  = dark ? '#0f1117' : '#f6f8fa'
   const sf  = dark ? '#161b22' : '#ffffff'
   const bdr = dark ? '#21262d' : '#d0d7de'
   const txt = dark ? '#c9d1d9' : '#1f2328'
   const mut = dark ? '#8b949e' : '#636c76'
+  const sidePad = mobile ? 18 : 32
 
   const btn  = { padding: '7px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', border: `1px solid ${bdr}`, background: sf, color: txt, borderRadius: 4 }
   const btnP = { padding: '7px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', border: '1px solid #388bfd', background: '#388bfd', color: '#fff', borderRadius: 4 }
@@ -15,22 +19,24 @@ export default function LandingPage({ dark, setDark, onLaunch }) {
     <div style={{ background: bg, color: txt, minHeight: '100vh', fontFamily: 'inherit' }}>
 
       {/* nav */}
-      <nav style={{ height: 44, display: 'flex', alignItems: 'center', padding: '0 32px', borderBottom: `1px solid ${bdr}`, background: sf }}>
-        <span style={{ fontSize: 13, fontWeight: 700, color: txt }}>SmartPark MQTT</span>
-        <span style={{ marginLeft: 10, fontSize: 11, fontFamily: 'monospace', color: mut }}>BBM 460</span>
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+      <nav style={{ height: 44, display: 'flex', alignItems: 'center', padding: `0 ${sidePad}px`, borderBottom: `1px solid ${bdr}`, background: sf, overflowX: 'auto' }}>
+        <span style={{ fontSize: 13, fontWeight: 700, color: txt, whiteSpace: 'nowrap' }}>SmartPark MQTT</span>
+        {!mobile && <span style={{ marginLeft: 10, fontSize: 11, fontFamily: 'monospace', color: mut }}>BBM 460</span>}
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: mobile ? 6 : 8, alignItems: 'center', flexShrink: 0 }}>
           <button onClick={() => setDark(d => !d)} style={btn}>{dark ? 'Light' : 'Dark'}</button>
-          <a href="https://github.com/Ramykaz/smartpark-mqtt" target="_blank" rel="noopener noreferrer"
-            style={{ ...btn, textDecoration: 'none' }}>GitHub</a>
+          {!mobile && (
+            <a href="https://github.com/Ramykaz/smartpark-mqtt" target="_blank" rel="noopener noreferrer"
+              style={{ ...btn, textDecoration: 'none' }}>GitHub</a>
+          )}
           <button onClick={onLaunch} style={btnP}>Dashboard</button>
         </div>
       </nav>
 
       {/* hero */}
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '80px 32px 72px', display: 'grid', gridTemplateColumns: '1fr 300px', gap: 56, alignItems: 'start' }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: mobile ? '40px 18px 48px' : '80px 32px 72px', display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1fr 300px', gap: mobile ? 32 : 56, alignItems: 'start' }}>
         <div>
           <span style={lbl}>Research Project · BBM 460 · 2025</span>
-          <h1 style={{ fontSize: 'clamp(28px, 4vw, 46px)', fontWeight: 700, margin: '14px 0 18px', letterSpacing: '-0.02em', lineHeight: 1.15, color: txt }}>
+          <h1 style={{ fontSize: 'clamp(28px, 7vw, 46px)', fontWeight: 700, margin: '14px 0 18px', letterSpacing: '-0.02em', lineHeight: 1.15, color: txt }}>
             SmartPark MQTT
           </h1>
           <p style={{ fontSize: 14, lineHeight: 1.75, color: mut, maxWidth: 480, margin: '0 0 32px' }}>
@@ -38,7 +44,7 @@ export default function LandingPage({ dark, setDark, onLaunch }) {
             and latency across QoS levels 0, 1, and 2 on clean and 5% packet-loss
             networks using 12 controlled experiments across 10, 30, and 50-slot lots.
           </p>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button onClick={onLaunch} style={btnP}>Open Dashboard</button>
             <a href="https://github.com/Ramykaz/smartpark-mqtt" target="_blank" rel="noopener noreferrer"
               style={{ ...btn, textDecoration: 'none' }}>GitHub →</a>
@@ -68,8 +74,8 @@ export default function LandingPage({ dark, setDark, onLaunch }) {
       </div>
 
       {/* QoS table */}
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 32px 72px' }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 16, marginBottom: 14 }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: `0 ${sidePad}px ${mobile ? 48 : 72}px` }}>
+        <div style={{ display: 'flex', flexDirection: mobile ? 'column' : 'row', alignItems: mobile ? 'flex-start' : 'baseline', gap: mobile ? 4 : 16, marginBottom: 14 }}>
           <span style={lbl}>QoS Comparison</span>
           <span style={{ fontSize: 12, fontFamily: 'monospace', color: mut }}>50-slot lot · 1 Hz · 60 s · 5% packet loss</span>
         </div>
@@ -106,7 +112,7 @@ export default function LandingPage({ dark, setDark, onLaunch }) {
       </div>
 
       {/* stack + CTA */}
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 32px 72px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 32 }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: `0 ${sidePad}px ${mobile ? 48 : 72}px`, display: 'flex', flexDirection: mobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: mobile ? 'flex-start' : 'center', gap: mobile ? 20 : 32 }}>
         <div>
           <span style={lbl}>Stack</span>
           <p style={{ marginTop: 10, fontSize: 13, color: mut, lineHeight: 1.9 }}>
@@ -119,7 +125,7 @@ export default function LandingPage({ dark, setDark, onLaunch }) {
       </div>
 
       {/* footer */}
-      <div style={{ borderTop: `1px solid ${bdr}`, padding: '14px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ borderTop: `1px solid ${bdr}`, padding: mobile ? '14px 18px' : '14px 32px', display: 'flex', flexDirection: mobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: mobile ? 'flex-start' : 'center', gap: mobile ? 6 : 0 }}>
         <span style={{ fontSize: 12, fontFamily: 'monospace', color: mut }}>SmartPark MQTT — BBM 460</span>
         <a href="https://github.com/Ramykaz/smartpark-mqtt" target="_blank" rel="noopener noreferrer"
           style={{ fontSize: 12, color: mut, textDecoration: 'none' }}>

@@ -127,7 +127,7 @@ export default function LogViewer({ dark }) {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         {LOG_OPTIONS.map(o => (
           <button key={o.key} onClick={() => setActive(o.key)}
             className="px-3 py-1 rounded-lg text-xs font-medium transition-all"
@@ -141,7 +141,7 @@ export default function LogViewer({ dark }) {
         </label>
       </div>
 
-      <div className="rounded-xl h-80 overflow-y-auto font-mono text-xs p-4 space-y-0.5"
+      <div className="rounded-xl h-64 sm:h-80 overflow-y-auto font-mono text-xs p-3 sm:p-4 space-y-0.5"
         style={{ background: termBg, border: `1px solid ${termBdr}` }}>
         {loading && <p className="text-slate-600 animate-pulse">Loading…</p>}
         {error && <p className="text-red-400">{error}</p>}

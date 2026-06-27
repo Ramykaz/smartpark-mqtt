@@ -63,13 +63,14 @@ function ParkingSpace({ slot_id, state, dark }) {
 
   return (
     <div
-      className="relative flex flex-col items-center justify-between transition-all duration-400"
+      className="relative flex flex-col items-center justify-between"
       style={{
         minHeight: '88px',
         background: c.bg,
         borderLeft:   `1px solid ${c.border}`,
         borderRight:  `1px solid ${c.border}`,
         boxShadow:    c.glow,
+        transition: 'background 0.4s, box-shadow 0.4s',
       }}
     >
       {/* top painted line */}

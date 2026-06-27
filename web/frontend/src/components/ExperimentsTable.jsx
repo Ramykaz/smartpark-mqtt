@@ -309,7 +309,7 @@ function FindingCard({ color, label, value, sub, dark }) {
   const border = dark ? '#1e2228' : '#e2e8f0'
   const muted  = dark ? '#64748b' : '#94a3b8'
   return (
-    <div className="rounded-xl p-5" style={{ background: bg, border: `1px solid ${border}`, borderTop: `3px solid ${color}` }}>
+    <div className="rounded-xl p-5" style={{ background: bg, borderLeft: `1px solid ${border}`, borderRight: `1px solid ${border}`, borderBottom: `1px solid ${border}`, borderTop: `3px solid ${color}` }}>
       <p className="text-xs uppercase tracking-wider font-semibold mb-2" style={{ color: muted }}>{label}</p>
       <p className="text-3xl font-black font-mono mb-1" style={{ color }}>{value}</p>
       <p className="text-xs" style={{ color: muted }}>{sub}</p>
